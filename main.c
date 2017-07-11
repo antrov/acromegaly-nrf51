@@ -592,6 +592,7 @@ int main(void)
     for (;;)
     {
         power_manage();
+				//nrf_gpio_pin_write(16, nrf_gpio_pin_read(BUTTON_3));
     }
 }
 
