@@ -1916,12 +1916,37 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Driver</GroupName>
+          <GroupName>SEGGER</GroupName>
           <Files>
             <File>
-              <FileName>motor_drv.c</FileName>
+              <FileName>msgs.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\motor_drv.c</FilePath>
+              <FilePath>..\..\..\msgs.c</FilePath>
+            </File>
+            <File>
+              <FileName>msgs.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\msgs.h</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\SEGGER_RTT.c</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\SEGGER_RTT.h</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT_Conf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\SEGGER_RTT_Conf.h</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT_printf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\SEGGER_RTT_printf.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -3843,12 +3868,37 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Driver</GroupName>
+          <GroupName>SEGGER</GroupName>
           <Files>
             <File>
-              <FileName>motor_drv.c</FileName>
+              <FileName>msgs.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\motor_drv.c</FilePath>
+              <FilePath>..\..\..\msgs.c</FilePath>
+            </File>
+            <File>
+              <FileName>msgs.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\msgs.h</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\SEGGER_RTT.c</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\SEGGER_RTT.h</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT_Conf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\SEGGER_RTT_Conf.h</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT_printf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\SEGGER_RTT_printf.c</FilePath>
             </File>
           </Files>
         </Group>
