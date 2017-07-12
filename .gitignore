@@ -1,2 +1,4 @@
 pca10028/s130/arm5_no_packs/_build/
 pca10028/s130/arm5_no_packs/RTE/
+*.Antrov
+pca10028/s130/arm5_no_packs/JLinkLog.txt

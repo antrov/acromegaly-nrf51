@@ -142,7 +142,7 @@ void ble_our_service_on_ble_evt(ble_os_t * p_our_service, ble_evt_t * p_ble_evt)
 		}
 }
 
-void our_termperature_characteristic_update(ble_os_t *p_our_service, int32_t *temperature_value) 
+void our_termperature_characteristic_update(ble_os_t *p_our_service, int *temperature_value) 
 {
 		if (p_our_service->conn_handle != BLE_CONN_HANDLE_INVALID)
 		{

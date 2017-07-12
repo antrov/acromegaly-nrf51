@@ -55,6 +55,7 @@
 #include "controller.h"
 #include "SEGGER_RTT.h"
 
+#define DEBUG														 1
 #define IS_SRVC_CHANGED_CHARACT_PRESENT  1                                          /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
 #define CENTRAL_LINK_COUNT               0                                          /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
@@ -565,6 +566,20 @@ static void power_manage(void)
     APP_ERROR_CHECK(err_code);
 }
 
+void controller_pos_cb(int pos)
+{
+		#if DEBUG == 1
+		SEGGER_RTT_printf(0, "Received cb with value %d\n", pos);
+		#endif
+		
+		our_termperature_characteristic_update(&m_our_service, &pos);
+}
+
+void system_init()
+{		
+		controller_init();
+		controller_set_cb(controller_pos_cb);
+}
 
 /**@brief Function for application main entry.
  */
@@ -576,7 +591,7 @@ int main(void)
     // Initialize.
     timers_init();
     buttons_leds_init(&erase_bonds);
-		controller_init();
+		system_init();
     ble_stack_init();
     device_manager_init(erase_bonds);
     gap_params_init();
@@ -588,11 +603,23 @@ int main(void)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
+		char c = 0;
     // Enter main loop.
     for (;;)
     {
-        power_manage();
-				//nrf_gpio_pin_write(16, nrf_gpio_pin_read(BUTTON_3));
+				c = SEGGER_RTT_WaitKey();
+				if(c == 'u'){
+						controller_move(MOVE_DIRECTION_UP);
+				} else if (c == 'd') {
+						controller_move(MOVE_DIRECTION_DOWN);
+				} else if (c == 's') {
+						controller_stop();
+				} else if (c == 't') {
+						controller_target_position_set(6);
+				} else if (c == '0') {
+						controller_target_position_set(0);
+				}
+        //power_manage();				
     }
 }
 
