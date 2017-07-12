@@ -7,14 +7,17 @@
 
 #define controller_stop() controller_move(MOVE_DIRECTION_NONE)
 
-typedef void (*controller_pos_cb_t)(int);
-typedef struct
+typedef struct 
 {
-		controller_pos_cb_t				pos_cb; 
-} controller_cb_t;
+		int 		position;
+		int 		target;
+		uint8_t movement;
+} controller_state_t;
+
+typedef void (*controller_cb_t)(controller_state_t* block);
 
 void controller_init(void);
-void controller_set_cb(controller_pos_cb_t cb);
+void controller_register_cb(controller_cb_t cb);
 void controller_move(uint8_t direction);
 void controller_target_position_set(uint16_t position);
 

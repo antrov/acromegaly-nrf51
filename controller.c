@@ -15,18 +15,15 @@
 
 #define DIRECTION_DEBUG(direction) direction == MOVE_DIRECTION_UP ? 1 : (direction == MOVE_DIRECTION_DOWN ? -1 : 0)
 
-int movement = MOVE_DIRECTION_NONE;
-int currentPosition = 0;
-int targetPositon = -1;
-
-static controller_cb_t controller_cb;
+static controller_cb_t 		controller_cb;
+static controller_state_t m_state;
 
 static bool isInit = false; 
 
 void emergency_break() 
 {
 		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Emergency break (!) with currentPosition %d and movement direction %d\n", currentPosition, DIRECTION_DEBUG(movement));
+		SEGGER_RTT_printf(0, "Emergency break (!) with currentPosition %d and movement direction %d\n", m_state.position, DIRECTION_DEBUG(m_state.movement));
 		#endif
 		
 		nrf_gpio_pin_clear(GPIO_MOTOR_DOWN);
@@ -35,35 +32,32 @@ void emergency_break()
 
 void update_current_position(int position)
 {
-		currentPosition = position;
+		m_state.position = position;
 	
-		if (controller_cb.pos_cb) 
-		{
-				controller_cb.pos_cb(position);
-		}
+		if (controller_cb) controller_cb(&m_state);
 }
 
-void controller_set_cb(controller_pos_cb_t cb)
+void controller_register_cb(controller_cb_t cb)
 {
-		controller_cb.pos_cb = cb;
+		controller_cb = cb;
 }
 
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
 		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Tick pin handler with currentPosition %d, target %d, movement direction %d\n", currentPosition, targetPositon, DIRECTION_DEBUG(movement));
+		SEGGER_RTT_printf(0, "Tick pin handler with currentPosition %d, target %d, movement direction %d\n", m_state.position, m_state.target, DIRECTION_DEBUG(m_state.movement));
 		#endif
 	
-		bool stop = targetPositon > -1;
+		bool stop = m_state.target > -1;
 	
-		switch (movement) {
+		switch (m_state.movement) {
 				case MOVE_DIRECTION_DOWN:
-						update_current_position(currentPosition - 1);
-						stop &= currentPosition <= targetPositon;
+						update_current_position(m_state.position - 1);
+						stop &= m_state.position <= m_state.target;
 						break;
 				case MOVE_DIRECTION_UP:
-						update_current_position(currentPosition + 1);
-						stop &= currentPosition >= targetPositon;
+						update_current_position(m_state.position + 1);
+						stop &= m_state.position >= m_state.target;
 						break;
 				case MOVE_DIRECTION_NONE:
 						emergency_break();
@@ -72,7 +66,7 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 		}
 		
 		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "currentPosition changed to %d, stop? = %d\n", currentPosition, stop);
+		SEGGER_RTT_printf(0, "currentPosition changed to %d, stop? = %d\n", m_state.position, stop);
 		#endif
 		
 		if (stop) {
@@ -88,6 +82,10 @@ void switch_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 void controller_init(void)
 {
 		if (isInit) return;
+	
+		m_state.movement = MOVE_DIRECTION_NONE;
+		m_state.position = 0;
+		m_state.target = -1;
 	
 		ret_code_t err_code;
 
@@ -126,16 +124,16 @@ void controller_init(void)
 void controller_move(uint8_t direction) 
 {
 		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Controller move with direction %d (current %d)\n", DIRECTION_DEBUG(direction), DIRECTION_DEBUG(movement));
+		SEGGER_RTT_printf(0, "Controller move with direction %d (current %d)\n", DIRECTION_DEBUG(direction), DIRECTION_DEBUG(m_state.movement));
 		#endif
 	
-		if (direction == movement) {
+		if (direction == m_state.movement) {
 				return;
 		}
 	
 		nrf_drv_gpiote_out_clear(GPIO_MOTOR_UP);
 		nrf_drv_gpiote_out_clear(GPIO_MOTOR_DOWN);
-		movement = direction;
+		m_state.movement = direction;
 	
 		switch (direction) {
 				case MOVE_DIRECTION_DOWN:
@@ -152,18 +150,18 @@ void controller_move(uint8_t direction)
 void controller_target_position_set(uint16_t target)
 {
 		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Set target currentPosition %d (%d current)\n", target, currentPosition);
+		SEGGER_RTT_printf(0, "Set target currentPosition %d (%d current)\n", target, m_state.position);
 		#endif
 		
-		if (target == currentPosition || target == targetPositon) {
+		if (target == m_state.position || target == m_state.target) {
 				return;
 		}
 		
-		targetPositon = target;
+		m_state.target = target;
 		
-		if (target < currentPosition) {
+		if (target < m_state.position) {
 				controller_move(MOVE_DIRECTION_DOWN);
-		} else if (target > currentPosition) {
+		} else if (target > m_state.position) {
 				controller_move(MOVE_DIRECTION_UP);
 		}
 }

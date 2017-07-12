@@ -566,19 +566,19 @@ static void power_manage(void)
     APP_ERROR_CHECK(err_code);
 }
 
-void controller_pos_cb(int pos)
+void controller_cb(controller_state_t * state)
 {
 		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Received cb with value %d\n", pos);
+		SEGGER_RTT_printf(0, "Received cb with value %d\n", state->position);
 		#endif
 		
-		our_termperature_characteristic_update(&m_our_service, &pos);
+		//our_termperature_characteristic_update(&m_our_service, &pos);
 }
 
 void system_init()
 {		
 		controller_init();
-		controller_set_cb(controller_pos_cb);
+		controller_register_cb(controller_cb);
 }
 
 /**@brief Function for application main entry.
