@@ -48,7 +48,7 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 		SEGGER_RTT_printf(0, "Tick pin handler with currentPosition %d, target %d, movement direction %d\n", m_state.position, m_state.target, DIRECTION_DEBUG(m_state.movement));
 		#endif
 	
-		bool stop = m_state.target > -1;
+		bool stop = m_state.target > 0;
 	
 		switch (m_state.movement) {
 				case MOVE_DIRECTION_DOWN:
@@ -76,7 +76,8 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 
 void switch_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
-    nrf_gpio_pin_toggle(GPIO_SWITCH_CONTROL);
+		controller_switch(m_state.global_switch == SWITCH_OFF ? SWITCH_ON : SWITCH_OFF);
+    //nrf_gpio_pin_toggle(GPIO_SWITCH_CONTROL);
 }
 
 void controller_init(void)
@@ -84,8 +85,9 @@ void controller_init(void)
 		if (isInit) return;
 	
 		m_state.movement = MOVE_DIRECTION_NONE;
-		m_state.position = 0;
-		m_state.target = -1;
+		m_state.position = 1;
+		m_state.target = 0;
+		m_state.global_switch = SWITCH_OFF;
 	
 		ret_code_t err_code;
 
@@ -143,8 +145,10 @@ void controller_move(uint8_t direction)
 						nrf_drv_gpiote_out_set(GPIO_MOTOR_UP);
 						break;
 				case MOVE_DIRECTION_NONE:
-				default: break;
+				default: return;
 		}
+		
+		if (controller_cb) controller_cb(&m_state);
 }
 
 void controller_target_position_set(uint16_t target)
@@ -163,5 +167,27 @@ void controller_target_position_set(uint16_t target)
 				controller_move(MOVE_DIRECTION_DOWN);
 		} else if (target > m_state.position) {
 				controller_move(MOVE_DIRECTION_UP);
+		} else return;
+		
+		if (controller_cb) controller_cb(&m_state);
+}
+
+void controller_switch(uint8_t switch_state)
+{
+		#if DEBUG == 1
+		SEGGER_RTT_printf(0, "Controller switch to %d from %d (read %d)\n", switch_state, m_state.global_switch, nrf_gpio_pin_read(GPIO_SWITCH_CONTROL));
+		#endif
+	
+		if (m_state.global_switch == nrf_gpio_pin_read(GPIO_SWITCH_CONTROL) && m_state.global_switch == switch_state) {
+				return;
 		}
+		
+		if (switch_state == SWITCH_OFF) {
+				nrf_drv_gpiote_out_clear(GPIO_SWITCH_CONTROL);
+		} else if (switch_state == SWITCH_ON) {
+				nrf_drv_gpiote_out_set(GPIO_SWITCH_CONTROL);
+		} else return;
+		
+		m_state.global_switch = switch_state;
+		if (controller_cb) controller_cb(&m_state);
 }

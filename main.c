@@ -50,7 +50,7 @@
 #include "ble_hci.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
-#include "our_service.h"
+#include "status_service.h"
 #include "ctrl_service.h"
 #include "controller.h"
 #include "SEGGER_RTT.h"
@@ -95,8 +95,8 @@ APP_TIMER_DEF(m_our_char_timer_id);
 
 static uint16_t                          m_conn_handle = BLE_CONN_HANDLE_INVALID;   /**< Handle of the current connection. */
 
-ble_os_t m_our_service;
-ble_ctrl_service_t m_ctrl_service;
+ble_ss_t 						m_status_service;
+ble_ctrl_service_t 	m_ctrl_service;
                                    
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -118,7 +118,7 @@ static void timer_timeout_handler(void * p_context)
 {
     int32_t temperature = 0;   
 		sd_temp_get(&temperature);
-		our_termperature_characteristic_update(&m_our_service, &temperature);
+		//our_termperature_characteristic_update(&m_our_service, &temperature);
 		nrf_gpio_pin_toggle(LED_2);
 }
 
@@ -335,7 +335,7 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
     dm_ble_evt_handler(p_ble_evt);
     ble_conn_params_on_ble_evt(p_ble_evt);
 		ble_ctrl_service_on_ble_evt(&m_ctrl_service, p_ble_evt);
-		ble_our_service_on_ble_evt(&m_our_service, p_ble_evt);
+		ble_status_service_on_ble_evt(&m_status_service, p_ble_evt);
     bsp_btn_ble_on_ble_evt(p_ble_evt);
     on_ble_evt(p_ble_evt);
     ble_advertising_on_ble_evt(p_ble_evt);
@@ -512,7 +512,7 @@ static void advertising_init(void)
 		manuf_data_response.data.size = sizeof(data);
 		
 		ble_advdata_t advdata_response;
-		ble_uuid_t m_adv_uuids[] = {BLE_UUID_OUR_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN};
+		ble_uuid_t m_adv_uuids[] = {BLE_UUID_STATUS_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN};
 		
 		memset(&advdata_response, 0, sizeof(advdata_response));
 		
@@ -529,10 +529,10 @@ static void advertising_init(void)
  */
 static void services_init(void)
 {
-		memset(&m_our_service, 0, sizeof(ble_os_t));
+		memset(&m_status_service, 0, sizeof(ble_ss_t));
 		memset(&m_ctrl_service, 0, sizeof(ble_ctrl_service_t));
 	
-    our_service_init(&m_our_service);
+    status_service_init(&m_status_service);
 		control_service_init(&m_ctrl_service);
 }
 
@@ -572,7 +572,7 @@ void controller_cb(controller_state_t * state)
 		SEGGER_RTT_printf(0, "Received cb with value %d\n", state->position);
 		#endif
 		
-		//our_termperature_characteristic_update(&m_our_service, &pos);
+		status_characteristic_update(&m_status_service, state->position, state->target, state->movement, state->global_switch);
 }
 
 void system_init()
@@ -618,6 +618,10 @@ int main(void)
 						controller_target_position_set(6);
 				} else if (c == '0') {
 						controller_target_position_set(0);
+				} else if (c == 'o') {
+						controller_switch(SWITCH_OFF);
+				} else if (c == 'i') {
+						controller_switch(SWITCH_ON);
 				}
         //power_manage();				
     }

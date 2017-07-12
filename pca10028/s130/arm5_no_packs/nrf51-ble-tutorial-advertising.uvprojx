@@ -1886,17 +1886,17 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>OurService</GroupName>
+          <GroupName>StatusService</GroupName>
           <Files>
             <File>
-              <FileName>our_service.c</FileName>
+              <FileName>status_service.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\our_service.c</FilePath>
+              <FilePath>..\..\..\status_service.c</FilePath>
             </File>
             <File>
-              <FileName>our_service.h</FileName>
+              <FileName>status_service.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\our_service.h</FilePath>
+              <FilePath>..\..\..\status_service.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -3838,17 +3838,17 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>OurService</GroupName>
+          <GroupName>StatusService</GroupName>
           <Files>
             <File>
-              <FileName>our_service.c</FileName>
+              <FileName>status_service.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\our_service.c</FilePath>
+              <FilePath>..\..\..\status_service.c</FilePath>
             </File>
             <File>
-              <FileName>our_service.h</FileName>
+              <FileName>status_service.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\our_service.h</FilePath>
+              <FilePath>..\..\..\status_service.h</FilePath>
             </File>
           </Files>
         </Group>
