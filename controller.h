@@ -11,8 +11,8 @@
 
 typedef struct 
 {
-		uint8_t 		position;
-		uint8_t 		target;
+		int16_t 		position;
+		int16_t 		target;
 		uint8_t 		movement;
 		uint8_t			global_switch;
 } controller_state_t;
@@ -22,7 +22,7 @@ typedef void (*controller_cb_t)(controller_state_t* block);
 void controller_init(void);
 void controller_register_cb(controller_cb_t cb);
 void controller_move(uint8_t direction);
-void controller_target_position_set(uint16_t position);
+void controller_target_position_set(int16_t position);
 void controller_switch(uint8_t switch_state);
 
 #endif

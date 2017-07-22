@@ -17,9 +17,9 @@
 #define GPIO_TICK_INPUT 								29
 #define GPIO_TICK_OUTPUT								01		/* Tick PWM generator, fo testing purpoese */
 
-#define MIN_POSITION										1			/* Defined in cm, different from NIL_POSITION */
+#define MIN_POSITION										0			/* Defined in cm, different from NIL_POSITION */
 #define MAX_POSITION										177		/* Defined in cm */
-#define NIL_POSITION										0			/* Marks target as unset */
+#define NIL_POSITION										-1		/* Marks target as unset */
 
 #define DIRECTION_DEBUG(direction) direction == MOVE_DIRECTION_UP ? 1 : (direction == MOVE_DIRECTION_DOWN ? -1 : 0)
 
@@ -28,7 +28,6 @@ static controller_state_t 	m_state;	/* COntroller state callback method. Optiona
 
 static bool 								isInit = false; /* For single init of controller */
 
-void emergency_break(void);
 void update_current_position(int position);
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 void switch_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
@@ -95,12 +94,12 @@ void update_tick_generator()
 		if (m_state.movement != MOVE_DIRECTION_NONE)
 		{
 				tick_generator_start();
-				SEGGER_RTT_printf(0, "Startted tick generator");
+				SEGGER_RTT_printf(0, "Startted tick generator\n");
 		}
 		else 
 		{
 				tick_generator_stop();
-				SEGGER_RTT_printf(0, "Stopped tick generator");
+				SEGGER_RTT_printf(0, "Stopped tick generator\n");
 		}
 		#endif
 }
@@ -110,59 +109,63 @@ void controller_register_cb(controller_cb_t cb)
 		m_cb = cb;
 }
 
-void emergency_break() 
-{
-		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Emergency break (!) with currentPosition %d and movement direction %d\n", m_state.position, DIRECTION_DEBUG(m_state.movement));
-		#endif
-		
-		nrf_gpio_pin_clear(GPIO_MOTOR_DOWN);
-		nrf_gpio_pin_clear(GPIO_MOTOR_UP);
-		update_tick_generator();
-}
-
 void controller_move(uint8_t direction) 
-{
-		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Controller move with direction %d (current %d)\n", DIRECTION_DEBUG(direction), DIRECTION_DEBUG(m_state.movement));
-		#endif
-	
-		if (direction == m_state.movement) {
-				return;
-		}
-	
+{	
 		nrf_drv_gpiote_out_clear(GPIO_MOTOR_UP);
 		nrf_drv_gpiote_out_clear(GPIO_MOTOR_DOWN);
-		m_state.movement = direction;
+		m_state.movement = MOVE_DIRECTION_NONE;
+	
+		uint8_t motor = 0x00;
 	
 		switch (direction) {
 				case MOVE_DIRECTION_DOWN:
-						nrf_drv_gpiote_out_set(GPIO_MOTOR_DOWN);
+						motor = m_state.position > MIN_POSITION ? GPIO_MOTOR_DOWN : 0;
 						break;
 				case MOVE_DIRECTION_UP:
-						nrf_drv_gpiote_out_set(GPIO_MOTOR_UP);
+						motor = m_state.position < MAX_POSITION ? GPIO_MOTOR_UP : 0;
 						break;
 				case MOVE_DIRECTION_NONE:
 				default: break;
 		}
 		
-		update_tick_generator();
+		if (motor == 0x00) 
+		{
+				#if DEBUG
+				SEGGER_RTT_printf(0, "Controller move not allowed");
+				#endif
+		}
+		else 
+		{
+				#if DEBUG
+				SEGGER_RTT_printf(0, "Controller move with direction %d (current %d) from positon %d\n", DIRECTION_DEBUG(direction), DIRECTION_DEBUG(m_state.movement), m_state.position);
+				#endif
+			
+				m_state.movement = direction;
+				nrf_drv_gpiote_out_set(motor);
+		}	
+		
+		update_tick_generator();		
 		if (m_cb) m_cb(&m_state);
 }
 
-void controller_target_position_set(uint16_t target)
-{
-		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Set target currentPosition %d (%d current)\n", target, m_state.position);
-		#endif
-		
-		if (target <= MIN_POSITION || target >= MAX_POSITION) {
+void controller_target_position_set(int16_t target)
+{	
+		if (target == NIL_POSITION)
+		{
+				m_state.target = NIL_POSITION;
+				controller_stop();
 				return;
 		}
+	
+		target = target < MIN_POSITION ? MIN_POSITION : (target > MAX_POSITION ? MAX_POSITION : target);
 	
 		if (target == m_state.position || target == m_state.target) {
 				return;
 		}
+		
+		#if DEBUG == 1
+		SEGGER_RTT_printf(0, "Set target currentPosition %d (%d current)\n", target, m_state.position);
+		#endif
 		
 		m_state.target = target;
 		
@@ -201,19 +204,22 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 		SEGGER_RTT_printf(0, "Tick pin handler with currentPosition %d, target %d, movement direction %d\n", m_state.position, m_state.target, DIRECTION_DEBUG(m_state.movement));
 		#endif
 	
-		bool stop = m_state.target != NIL_POSITION;
+		bool target = m_state.target != NIL_POSITION;
+		bool stop = false;
 	
 		switch (m_state.movement) {
 				case MOVE_DIRECTION_DOWN:
 						update_current_position(m_state.position - 1);
-						stop &= m_state.position <= m_state.target;
+						target &= m_state.position <= m_state.target;
+						stop = m_state.position <= MIN_POSITION;
 						break;
 				case MOVE_DIRECTION_UP:
 						update_current_position(m_state.position + 1);
-						stop &= m_state.position >= m_state.target;
+						target &= m_state.position >= m_state.target;
+						stop = m_state.position >= MAX_POSITION;
 						break;
 				case MOVE_DIRECTION_NONE:
-						emergency_break();
+						stop = true;
 						return;
 				default: break;
 		}
@@ -222,8 +228,14 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 		SEGGER_RTT_printf(0, "currentPosition changed to %d, stop? = %d\n", m_state.position, stop);
 		#endif
 		
-		if (stop) {
+		if (stop || target) {
 				controller_stop();
+		}
+		
+		if (target)
+		{
+				m_state.target = NIL_POSITION;
+				if (m_cb) m_cb(&m_state);
 		}
 }
 
