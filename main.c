@@ -567,11 +567,7 @@ static void power_manage(void)
 }
 
 void controller_cb(controller_state_t * state)
-{
-		#if DEBUG == 1
-		SEGGER_RTT_printf(0, "Received cb with value %d\n", state->position);
-		#endif
-		
+{		
 		status_characteristic_update(&m_status_service, state->position, state->target, state->movement, state->global_switch);
 }
 

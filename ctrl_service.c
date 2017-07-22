@@ -2,6 +2,7 @@
 #include <string.h>
 #include "ctrl_service.h"
 #include "ble_srv_common.h"
+#include "controller.h"
 #include "app_error.h"
 //#include "SEGGER_RTT.h"
 
@@ -50,9 +51,9 @@ static uint32_t ctrl_char_add(ble_ctrl_service_t * p_ctrl_service)
 		
 		attr_char_value.p_uuid      = &char_uuid;
 		attr_char_value.p_attr_md   = &attr_md;
-    attr_char_value.max_len     = 4;
-		attr_char_value.init_len    = 4;
-		uint8_t value[4]            = {0x01,0x02,0x03,0x04};
+    attr_char_value.max_len     = 2;
+		attr_char_value.init_len    = 2;
+		uint8_t value[4]            = {0x00, 0x00};
 		attr_char_value.p_value     = value;
 
     // Add our new characteristic to the service
@@ -91,13 +92,18 @@ void ble_ctrl_service_on_write(ble_ctrl_service_t * p_ctrl_service, ble_evt_t * 
 {
 		ble_gatts_evt_write_t * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 	
-		if (p_evt_write->handle == p_ctrl_service->char_handles.value_handle && p_evt_write->len > 1) {
+		if (p_evt_write->handle == p_ctrl_service->char_handles.value_handle && p_evt_write->len == 2) {
 				switch (p_evt_write->data[0]) {
 						case CTRL_VALUE_MOTOR_MOVEMENT:
+								controller_move(p_evt_write->data[1]);
 								break;
 						case CTRL_VALUE_MOTOR_POSITION:
+								controller_target_position_set(p_evt_write->data[1]);
 								break;
-						
+						case CTRL_VALUE_POWER_SWITCH:
+								controller_switch(p_evt_write->data[1]);
+								break;
+						default: break;
 				}
 		}		
 }
