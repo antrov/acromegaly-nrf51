@@ -587,13 +587,14 @@ int main(void)
     // Initialize.
     timers_init();
     buttons_leds_init(&erase_bonds);
-		system_init();
     ble_stack_init();
     device_manager_init(erase_bonds);
     gap_params_init();
+		system_init();
 		services_init();
     advertising_init();
     conn_params_init();
+	
 
     // Start execution.
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);

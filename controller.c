@@ -2,9 +2,12 @@
 #include "nrf.h"
 #include "nrf_drv_gpiote.h"
 #include "app_error.h"
+#include "app_pwm.h"
 #include "nrf_gpio.h"
 #include "controller.h"
 #include "boards.h"
+#include "aufzug_config.h"
+#include "tick_generator.h"
 #include "SEGGER_RTT.h"
 
 #define GPIO_SWITCH_INPUT								25
@@ -12,6 +15,7 @@
 #define GPIO_MOTOR_UP										16
 #define GPIO_MOTOR_DOWN									15
 #define GPIO_TICK_INPUT 								29
+#define GPIO_TICK_OUTPUT								01		/* Tick PWM generator, fo testing purpoese */
 
 #define MIN_POSITION										1			/* Defined in cm, different from NIL_POSITION */
 #define MAX_POSITION										177		/* Defined in cm */
@@ -32,7 +36,7 @@ void switch_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 void update_current_position(int position)
 {
 		m_state.position = position;
-	
+
 		if (m_cb) m_cb(&m_state);
 }
 
@@ -76,7 +80,29 @@ void controller_init(void)
 		err_code = nrf_drv_gpiote_out_init(GPIO_SWITCH_CONTROL, &out_config);
     APP_ERROR_CHECK(err_code);
 	
-		isInit = true;
+		/* Tick generator init */				
+		#if USE_TICK_GENERATOR
+		tick_generator_init(GPIO_TICK_OUTPUT);
+		SEGGER_RTT_printf(0, "Init tick generator");
+		#endif
+				
+		isInit = true;	
+}
+
+void update_tick_generator()
+{
+		#if USE_TICK_GENERATOR
+		if (m_state.movement != MOVE_DIRECTION_NONE)
+		{
+				tick_generator_start();
+				SEGGER_RTT_printf(0, "Startted tick generator");
+		}
+		else 
+		{
+				tick_generator_stop();
+				SEGGER_RTT_printf(0, "Stopped tick generator");
+		}
+		#endif
 }
 
 void controller_register_cb(controller_cb_t cb)
@@ -92,6 +118,7 @@ void emergency_break()
 		
 		nrf_gpio_pin_clear(GPIO_MOTOR_DOWN);
 		nrf_gpio_pin_clear(GPIO_MOTOR_UP);
+		update_tick_generator();
 }
 
 void controller_move(uint8_t direction) 
@@ -116,9 +143,10 @@ void controller_move(uint8_t direction)
 						nrf_drv_gpiote_out_set(GPIO_MOTOR_UP);
 						break;
 				case MOVE_DIRECTION_NONE:
-				default: return;
+				default: break;
 		}
 		
+		update_tick_generator();
 		if (m_cb) m_cb(&m_state);
 }
 
