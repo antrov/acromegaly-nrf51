@@ -5,7 +5,6 @@
 
 #if USE_TICK_GENERATOR
 APP_PWM_INSTANCE(PWM1,1); 
-#endif
 
 static volatile bool state_flag;
 static volatile bool ready_flag;   
@@ -29,7 +28,7 @@ void tick_generator_init(uint8_t pin)
 
 void tick_generator_start(void)
 {
-		while (app_pwm_channel_duty_set(&PWM1, 0, 0) == NRF_ERROR_BUSY);
+		while (app_pwm_channel_duty_set(&PWM1, 0, 50) == NRF_ERROR_BUSY);
 		state_flag = true;
 }
 
@@ -38,3 +37,4 @@ void tick_generator_stop(void)
 		while (app_pwm_channel_duty_set(&PWM1, 0, 100) == NRF_ERROR_BUSY);
 		state_flag = false;
 }
+#endif

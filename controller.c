@@ -18,7 +18,7 @@
 #define GPIO_TICK_OUTPUT								01		/* Tick PWM generator, fo testing purpoese */
 
 #define MIN_POSITION										0			/* Defined in cm, different from NIL_POSITION */
-#define MAX_POSITION										177		/* Defined in cm */
+#define MAX_POSITION										1000		/* Defined in cm */
 #define NIL_POSITION										-1		/* Marks target as unset */
 
 #define DIRECTION_DEBUG(direction) direction == MOVE_DIRECTION_UP ? 1 : (direction == MOVE_DIRECTION_DOWN ? -1 : 0)
@@ -44,7 +44,7 @@ void controller_init(void)
 		if (isInit) return;
 	
 		m_state.movement = MOVE_DIRECTION_NONE;
-		m_state.position = MIN_POSITION;
+		m_state.position = 500;//MIN_POSITION;
 		m_state.target = NIL_POSITION;
 		m_state.global_switch = SWITCH_OFF;
 	
@@ -53,7 +53,7 @@ void controller_init(void)
     nrf_drv_gpiote_init();
 	
 		/* TICK Input pins config */
-		nrf_drv_gpiote_in_config_t tick_in_config = GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
+		nrf_drv_gpiote_in_config_t tick_in_config = GPIOTE_CONFIG_IN_SENSE_LOTOHI(true);
     tick_in_config.pull = NRF_GPIO_PIN_PULLUP;
 		
 		err_code = nrf_drv_gpiote_in_init(GPIO_TICK_INPUT, &tick_in_config, in_pin_handler);
@@ -131,7 +131,7 @@ void controller_move(uint8_t direction)
 		if (motor == 0x00) 
 		{
 				#if DEBUG
-				SEGGER_RTT_printf(0, "Controller move not allowed");
+				SEGGER_RTT_printf(0, "Controller move not allowed. Stopping\n");
 				#endif
 		}
 		else 
@@ -140,8 +140,8 @@ void controller_move(uint8_t direction)
 				SEGGER_RTT_printf(0, "Controller move with direction %d (current %d) from positon %d\n", DIRECTION_DEBUG(direction), DIRECTION_DEBUG(m_state.movement), m_state.position);
 				#endif
 			
-				m_state.movement = direction;
-				nrf_drv_gpiote_out_set(motor);
+				m_state.movement = direction;		
+				nrf_drv_gpiote_out_set(motor);			
 		}	
 		
 		update_tick_generator();		
