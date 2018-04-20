@@ -39,9 +39,9 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 #source common to all targets
 C_SOURCE_FILES += \
 $(abspath ../../../main.c) \
-$(abspath ../../../status_service.c) \
-$(abspath ../../../controller.c) \
-$(abspath ../../../ctrl_service.c)
+$(abspath ../../../src/mod/controller.c) \
+$(abspath ../../../src/service/status_service.c) \
+$(abspath ../../../src/service/ctrl_service.c)
 
 C_SOURCE_FILES += \
 $(abspath $(SDK_ROOT)/components/libraries/button/app_button.c) \
@@ -79,7 +79,11 @@ ASM_SOURCE_FILES  = $(abspath $(SDK_ROOT)/components/toolchain/gcc/gcc_startup_n
 
 #includes common to all targets
 INC_PATHS += -I$(abspath ../../..)
-INC_PATHS  = -I$(abspath ../../../config/ble_app_template_s130_pca10028)
+INC_PATHS += -I$(abspath ../../../src)
+INC_PATHS += -I$(abspath ../../../src/mod)
+INC_PATHS += -I$(abspath ../../../src/service)
+INC_PATHS += -I$(abspath ../../../lib/segger)
+INC_PATHS += -I$(abspath ../../../config/ble_app_template_s130_pca10028)
 INC_PATHS += -I$(abspath ../../../config)
 
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/pwm)
