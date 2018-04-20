@@ -61,7 +61,7 @@
 #define CENTRAL_LINK_COUNT               0                                          /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
 #define PERIPHERAL_LINK_COUNT            1                                          /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
-#define DEVICE_NAME                      "HelloWorld"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                      "Acromegaly"                               /**< Name of device. Will be included in the advertising data. */
 #define APP_ADV_INTERVAL                 300                                        /**< The advertising interval (in units of 0.625 ms. This value corresponds to 25 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS       10                                        /**< The advertising timeout in units of seconds. */
 
@@ -239,11 +239,6 @@ static void conn_params_init(void)
 
     err_code = ble_conn_params_init(&cp_init);
     APP_ERROR_CHECK(err_code);
-}
-
-static void application_timers_start(void)
-{	
-    app_timer_start(m_our_char_timer_id, OUR_CHAR_TIMER_INTERVAL, NULL);
 }
 
 static void application_timer_stop(void)
@@ -512,7 +507,7 @@ static void advertising_init(void)
 		manuf_data_response.data.size = sizeof(data);
 		
 		ble_advdata_t advdata_response;
-		ble_uuid_t m_adv_uuids[] = {BLE_UUID_STATUS_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN};
+		ble_uuid_t m_adv_uuids[] = {{BLE_UUID_STATUS_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}};
 		
 		memset(&advdata_response, 0, sizeof(advdata_response));
 		
@@ -600,11 +595,11 @@ int main(void)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
-		char c = 0;
+		//char c = 0;
     // Enter main loop.
     for (;;)
     {
-				c = SEGGER_RTT_WaitKey();
+/*				c = SEGGER_RTT_WaitKey();
 				if(c == 'u'){
 						controller_move(MOVE_DIRECTION_UP);
 				} else if (c == 'd') {
@@ -619,8 +614,8 @@ int main(void)
 						controller_switch(SWITCH_OFF);
 				} else if (c == 'i') {
 						controller_switch(SWITCH_ON);
-				}
-        //power_manage();				
+				}*/
+        power_manage();				
     }
 }
 
