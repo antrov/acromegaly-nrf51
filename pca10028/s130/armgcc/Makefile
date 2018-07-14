@@ -54,9 +54,10 @@ $(abspath $(SDK_ROOT)/components/libraries/util/app_util_platform.c) \
 $(abspath $(SDK_ROOT)/components/libraries/fstorage/fstorage.c) \
 $(abspath $(SDK_ROOT)/components/libraries/util/nrf_assert.c) \
 $(abspath $(SDK_ROOT)/components/libraries/util/nrf_log.c) \
-$(abspath $(SDK_ROOT)/components/libraries/uart/retarget.c) \
 $(abspath $(SDK_ROOT)/components/libraries/sensorsim/sensorsim.c) \
-$(abspath $(SDK_ROOT)/components/libraries/uart/app_uart.c) \
+$(abspath $(SDK_ROOT)/components/libraries/fifo/app_fifo.c) \
+$(abspath $(SDK_ROOT)/components/libraries/uart/app_uart_fifo.c) \
+$(abspath $(SDK_ROOT)/components/libraries/uart/retarget.c) \
 $(abspath $(SDK_ROOT)/components/drivers_nrf/delay/nrf_delay.c) \
 $(abspath $(SDK_ROOT)/components/drivers_nrf/timer/nrf_drv_timer.c) \
 $(abspath $(SDK_ROOT)/components/drivers_nrf/common/nrf_drv_common.c) \
@@ -95,12 +96,13 @@ INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/fstorage/config)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/softdevice/s130/headers)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/delay)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/util)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/uart)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/fifo)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/ble/device_manager)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/uart)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/ble/common)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/sensorsim)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/pstorage)
-INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/uart)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/device)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/button)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/fstorage)
@@ -125,7 +127,7 @@ OUTPUT_BINARY_DIRECTORY = $(OBJECT_DIRECTORY)
 BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LISTING_DIRECTORY) )
 
 #flags common to all targets
-CFLAGS  = -DNRF_LOG_USES_UART=1
+CFLAGS  = -DNRF_LOG_USES_UART=0
 CFLAGS += -DBOARD_PCA10028
 CFLAGS += -DSOFTDEVICE_PRESENT
 CFLAGS += -DNRF51

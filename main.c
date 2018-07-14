@@ -26,6 +26,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "nordic_common.h"
@@ -43,6 +44,7 @@
 #include "device_manager.h"
 #include "pstorage.h"
 #include "app_trace.h"
+#include "app_uart.h"
 #include "bsp.h"
 #include "bsp_btn_ble.h"
 #include "sensorsim.h"
@@ -133,6 +135,30 @@ static void timers_init(void)
 
     app_timer_create(&m_our_char_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
 }
+#define MAX_TEST_DATA_BYTES     (15U)                /**< max number of test bytes to be used for tx and rx. */
+#define UART_TX_BUF_SIZE 256                         /**< UART TX buffer size. */
+#define UART_RX_BUF_SIZE 1  
+// static void uart_loopback_test()
+// {
+//     uint8_t *tx_data = (uint8_t *)("\n\rLOOPBACK_TEST\n\r");
+//     uint8_t rx_data;
+
+//     // Start sending one byte and see if you get the same
+//     for (uint32_t i = 0; i < MAX_TEST_DATA_BYTES; i++)
+//     {
+//         uint32_t err_code;
+//         while (app_uart_put(tx_data[i]) != NRF_SUCCESS)
+//             ;
+
+//         //nrf_delay_ms(10);
+//         err_code = app_uart_get(&rx_data);
+
+//         if ((rx_data != tx_data[i]) || (err_code != NRF_SUCCESS))
+//         {
+//         }
+//     }
+//     return;
+// }
 
 /**@brief Function for the GAP initialization.
  *
@@ -557,6 +583,18 @@ void system_init()
     controller_register_cb(controller_cb);
 }
 
+void uart_error_handle(app_uart_evt_t * p_event)
+{
+    if (p_event->evt_type == APP_UART_COMMUNICATION_ERROR)
+    {
+        APP_ERROR_HANDLER(p_event->data.error_communication);
+    }
+    else if (p_event->evt_type == APP_UART_FIFO_ERROR)
+    {
+        APP_ERROR_HANDLER(p_event->data.error_code);
+    }
+}
+
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -579,8 +617,44 @@ int main(void)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
+    const app_uart_comm_params_t comm_params =
+        {
+            RX_PIN_NUMBER,
+            TX_PIN_NUMBER,
+            RTS_PIN_NUMBER,
+            CTS_PIN_NUMBER,
+            APP_UART_FLOW_CONTROL_DISABLED,
+            false,
+            UART_BAUDRATE_BAUDRATE_Baud115200};
+
+    APP_UART_FIFO_INIT(&comm_params,
+                       UART_RX_BUF_SIZE,
+                       UART_TX_BUF_SIZE,
+                       uart_error_handle,
+                       APP_IRQ_PRIORITY_LOW,
+                       err_code);
+
+    APP_ERROR_CHECK(err_code);
     //char c = 0;
     // Enter main loop.
+    printf("\n\rStart: \n\r");
+
+    while (true)
+    {
+        uint8_t cr;
+        while(app_uart_get(&cr) != NRF_SUCCESS);
+        while(app_uart_put(cr) != NRF_SUCCESS);
+
+        if (cr == 'q' || cr == 'Q')
+        {
+            printf(" \n\rExit!\n\r");
+
+            while (true)
+            {
+                // Do nothing.
+            }
+        }
+    }
     for (;;)
     {
         /*				c = SEGGER_RTT_WaitKey();
