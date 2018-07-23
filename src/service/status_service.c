@@ -3,7 +3,6 @@
 #include "status_service.h"
 #include "ble_srv_common.h"
 #include "app_error.h"
-//#include "SEGGER_RTT.h"
 #include "nrf_gpio.h"
 
 #define STATUS_CHAR_LENGTH 4

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdbool.h>
 #include "nrf.h"
 #include "nrf_drv_gpiote.h"
@@ -8,7 +9,6 @@
 #include "boards.h"
 #include "aufzug_config.h"
 #include "tick_generator.h"
-#include "SEGGER_RTT.h"
 
 #define GPIO_SWITCH_INPUT 25
 #define GPIO_SWITCH_CONTROL 28
@@ -84,7 +84,7 @@ void controller_init(void)
 /* Tick generator init */
 #if USE_TICK_GENERATOR
 	tick_generator_init(GPIO_TICK_OUTPUT);
-	SEGGER_RTT_printf(0, "Init tick generator");
+	printf("Init tick generator");
 #endif
 
 	isInit = true;
@@ -96,12 +96,12 @@ void update_tick_generator()
 	if (m_state.movement != MOVE_DIRECTION_NONE)
 	{
 		tick_generator_start();
-		SEGGER_RTT_printf(0, "Startted tick generator\n");
+		printf("Startted tick generator\n");
 	}
 	else
 	{
 		tick_generator_stop();
-		SEGGER_RTT_printf(0, "Stopped tick generator\n");
+		printf("Stopped tick generator\n");
 	}
 #endif
 }
@@ -135,13 +135,13 @@ void controller_move(uint8_t direction)
 	if (motor == 0x00)
 	{
 #if DEBUG
-		SEGGER_RTT_printf(0, "Controller move not allowed. Stopping\n");
+		printf("Controller move not allowed. Stopping\n");
 #endif
 	}
 	else
 	{
 #if DEBUG
-		SEGGER_RTT_printf(0, "Controller move with direction %d (current %d) from positon %d\n", DIRECTION_DEBUG(direction), DIRECTION_DEBUG(m_state.movement), m_state.position);
+		printf("Controller move with direction %d (current %d) from positon %d\n", DIRECTION_DEBUG(direction), DIRECTION_DEBUG(m_state.movement), m_state.position);
 #endif
 
 		m_state.movement = direction;
@@ -170,7 +170,7 @@ void controller_target_position_set(int16_t target)
 	}
 
 #if DEBUG == 1
-	SEGGER_RTT_printf(0, "Set target currentPosition %d (%d current)\n", target, m_state.position);
+	printf("Set target currentPosition %d (%d current)\n", target, m_state.position);
 #endif
 
 	m_state.target = target;
@@ -193,7 +193,7 @@ void controller_target_position_set(int16_t target)
 void controller_switch(uint8_t switch_state)
 {
 #if DEBUG == 1
-	SEGGER_RTT_printf(0, "Controller switch to %d from %d (read %d)\n", switch_state, m_state.global_switch, nrf_gpio_pin_read(GPIO_SWITCH_CONTROL));
+	printf("Controller switch to %d from %d (read %ld)\n", switch_state, m_state.global_switch, nrf_gpio_pin_read(GPIO_SWITCH_CONTROL));
 #endif
 
 	if (m_state.global_switch == nrf_gpio_pin_read(GPIO_SWITCH_CONTROL) && m_state.global_switch == switch_state)
@@ -220,7 +220,7 @@ void controller_switch(uint8_t switch_state)
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
 #if DEBUG == 1
-	SEGGER_RTT_printf(0, "Tick pin handler with currentPosition %d, target %d, movement direction %d\n", m_state.position, m_state.target, DIRECTION_DEBUG(m_state.movement));
+	printf("Tick pin handler with currentPosition %d, target %d, movement direction %d\n", m_state.position, m_state.target, DIRECTION_DEBUG(m_state.movement));
 #endif
 
 	bool target = m_state.target != NIL_POSITION;
@@ -246,7 +246,7 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 	}
 
 #if DEBUG == 1
-	SEGGER_RTT_printf(0, "currentPosition changed to %d, stop? = %d\n", m_state.position, stop);
+	printf("currentPosition changed to %d, stop? = %d\n", m_state.position, stop);
 #endif
 
 	if (stop || target)

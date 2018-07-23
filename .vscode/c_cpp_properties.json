@@ -29,7 +29,8 @@
                 "/Users/antrov/Projekty/acro/nRF5_SDK_11.0.0_89a8197/components/drivers_nrf/timer",
                 "/Users/antrov/Projekty/acro/nRF5_SDK_11.0.0_89a8197/components/drivers_nrf/common",
                 "/Users/antrov/Projekty/acro/nRF5_SDK_11.0.0_89a8197/components/drivers_nrf/ppi",
-                "/Users/antrov/Projekty/acro/nRF5_SDK_11.0.0_89a8197//examples/bsp"
+                "/Users/antrov/Projekty/acro/nRF5_SDK_11.0.0_89a8197//examples/bsp",
+                "${workspaceFolder}/src/mod"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",

@@ -29,64 +29,62 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "nordic_common.h"
-#include "nrf.h"
 #include "app_error.h"
+#include "app_timer.h"
+#include "app_trace.h"
+#include "app_uart.h"
 #include "ble.h"
-#include "ble_hci.h"
-#include "ble_srv_common.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
 #include "ble_conn_params.h"
+#include "ble_hci.h"
+#include "ble_srv_common.h"
 #include "boards.h"
-#include "softdevice_handler.h"
-#include "app_timer.h"
-#include "device_manager.h"
-#include "pstorage.h"
-#include "app_trace.h"
-#include "app_uart.h"
 #include "bsp.h"
 #include "bsp_btn_ble.h"
-#include "sensorsim.h"
-#include "nrf_gpio.h"
-#include "ble_hci.h"
-#include "ble_advdata.h"
-#include "ble_advertising.h"
-#include "status_service.h"
-#include "ctrl_service.h"
 #include "controller.h"
-#include "SEGGER_RTT.h"
+#include "ctrl_service.h"
+#include "device_manager.h"
+#include "m45pe_drv.h"
+#include "nordic_common.h"
+#include "nrf.h"
+#include "nrf_gpio.h"
+#include "pstorage.h"
+#include "sensorsim.h"
+#include "softdevice_handler.h"
+#include "status_service.h"
 
-#define DEBUG 1
+#define SPI_CS_PIN 4 /**< SPI CS Pin.*/
+
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 1 /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
-#define CENTRAL_LINK_COUNT 0    /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
+#define CENTRAL_LINK_COUNT 0 /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
 #define PERIPHERAL_LINK_COUNT 1 /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
-#define DEVICE_NAME "Acromegaly"      /**< Name of device. Will be included in the advertising data. */
-#define APP_ADV_INTERVAL 300          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 25 ms). */
+#define DEVICE_NAME "Acromegaly" /**< Name of device. Will be included in the advertising data. */
+#define APP_ADV_INTERVAL 300 /**< The advertising interval (in units of 0.625 ms. This value corresponds to 25 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS 10 /**< The advertising timeout in units of seconds. */
 
-#define APP_TIMER_PRESCALER 0     /**< Value of the RTC1 PRESCALER register. */
+#define APP_TIMER_PRESCALER 0 /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_OP_QUEUE_SIZE 4 /**< Size of timer operation queues. */
 
 #define MIN_CONN_INTERVAL MSEC_TO_UNITS(100, UNIT_1_25_MS) /**< Minimum acceptable connection interval (0.1 seconds). */
 #define MAX_CONN_INTERVAL MSEC_TO_UNITS(500, UNIT_1_25_MS) /**< Maximum acceptable connection interval (0.2 second). */
-#define SLAVE_LATENCY 0                                    /**< Slave latency. */
-#define CONN_SUP_TIMEOUT MSEC_TO_UNITS(4000, UNIT_10_MS)   /**< Connection supervisory timeout (4 seconds). */
+#define SLAVE_LATENCY 0 /**< Slave latency. */
+#define CONN_SUP_TIMEOUT MSEC_TO_UNITS(4000, UNIT_10_MS) /**< Connection supervisory timeout (4 seconds). */
 
 #define FIRST_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER) /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
-#define MAX_CONN_PARAMS_UPDATE_COUNT 3                                            /**< Number of attempts before giving up the connection parameter negotiation. */
+#define MAX_CONN_PARAMS_UPDATE_COUNT 3 /**< Number of attempts before giving up the connection parameter negotiation. */
 
-#define SEC_PARAM_BOND 1                               /**< Perform bonding. */
-#define SEC_PARAM_MITM 0                               /**< Man In The Middle protection not required. */
-#define SEC_PARAM_LESC 0                               /**< LE Secure Connections not enabled. */
-#define SEC_PARAM_KEYPRESS 0                           /**< Keypress notifications not enabled. */
+#define SEC_PARAM_BOND 1 /**< Perform bonding. */
+#define SEC_PARAM_MITM 0 /**< Man In The Middle protection not required. */
+#define SEC_PARAM_LESC 0 /**< LE Secure Connections not enabled. */
+#define SEC_PARAM_KEYPRESS 0 /**< Keypress notifications not enabled. */
 #define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_NONE /**< No I/O capabilities. */
-#define SEC_PARAM_OOB 0                                /**< Out Of Band data not available. */
-#define SEC_PARAM_MIN_KEY_SIZE 7                       /**< Minimum encryption key size. */
-#define SEC_PARAM_MAX_KEY_SIZE 16                      /**< Maximum encryption key size. */
+#define SEC_PARAM_OOB 0 /**< Out Of Band data not available. */
+#define SEC_PARAM_MIN_KEY_SIZE 7 /**< Minimum encryption key size. */
+#define SEC_PARAM_MAX_KEY_SIZE 16 /**< Maximum encryption key size. */
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
@@ -111,12 +109,12 @@ ble_ctrl_service_t m_ctrl_service;
  * @param[in] line_num   Line number of the failing ASSERT call.
  * @param[in] file_name  File name of the failing ASSERT call.
  */
-void assert_nrf_callback(uint16_t line_num, const uint8_t *p_file_name)
+void assert_nrf_callback(uint16_t line_num, const uint8_t* p_file_name)
 {
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
-static void timer_timeout_handler(void *p_context)
+static void timer_timeout_handler(void* p_context)
 {
     int32_t temperature = 0;
     sd_temp_get(&temperature);
@@ -135,30 +133,9 @@ static void timers_init(void)
 
     app_timer_create(&m_our_char_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
 }
-#define MAX_TEST_DATA_BYTES     (15U)                /**< max number of test bytes to be used for tx and rx. */
-#define UART_TX_BUF_SIZE 256                         /**< UART TX buffer size. */
-#define UART_RX_BUF_SIZE 1  
-// static void uart_loopback_test()
-// {
-//     uint8_t *tx_data = (uint8_t *)("\n\rLOOPBACK_TEST\n\r");
-//     uint8_t rx_data;
-
-//     // Start sending one byte and see if you get the same
-//     for (uint32_t i = 0; i < MAX_TEST_DATA_BYTES; i++)
-//     {
-//         uint32_t err_code;
-//         while (app_uart_put(tx_data[i]) != NRF_SUCCESS)
-//             ;
-
-//         //nrf_delay_ms(10);
-//         err_code = app_uart_get(&rx_data);
-
-//         if ((rx_data != tx_data[i]) || (err_code != NRF_SUCCESS))
-//         {
-//         }
-//     }
-//     return;
-// }
+#define MAX_TEST_DATA_BYTES (15U) /**< max number of test bytes to be used for tx and rx. */
+#define UART_TX_BUF_SIZE 256 /**< UART TX buffer size. */
+#define UART_RX_BUF_SIZE 1
 
 /**@brief Function for the GAP initialization.
  *
@@ -172,7 +149,7 @@ static void gap_params_init(void)
     // Declearing parameter structs. Try to go to the struct definitions to get
     // more information about what parameters they contain
     ble_gap_conn_params_t gap_conn_params; // Struct to store GAP connection parameters like max min connection interval etc
-    ble_gap_conn_sec_mode_t sec_mode;      // Struct to store security parameters
+    ble_gap_conn_sec_mode_t sec_mode; // Struct to store security parameters
 
     // A simple macro that sets the Security Mode and Level bits in sec_mode
     // to require no protection (open link)
@@ -180,8 +157,8 @@ static void gap_params_init(void)
 
     // Store the device name and security mode in the SoftDevice. Our name is defined to "HelloWorld" in the beginning of this file
     err_code = sd_ble_gap_device_name_set(&sec_mode,
-                                          (const uint8_t *)DEVICE_NAME,
-                                          strlen(DEVICE_NAME));
+        (const uint8_t*)DEVICE_NAME,
+        strlen(DEVICE_NAME));
     APP_ERROR_CHECK(err_code); // Check for errors
 
     // Always initialize all fields in structs to zero or you might get unexpected behaviour
@@ -221,12 +198,11 @@ static void gap_params_init(void)
  *
  * @param[in] p_evt  Event received from the Connection Parameters Module.
  */
-static void on_conn_params_evt(ble_conn_params_evt_t *p_evt)
+static void on_conn_params_evt(ble_conn_params_evt_t* p_evt)
 {
     uint32_t err_code;
 
-    if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED)
-    {
+    if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED) {
         err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
         APP_ERROR_CHECK(err_code);
     }
@@ -295,8 +271,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 {
     uint32_t err_code;
 
-    switch (ble_adv_evt)
-    {
+    switch (ble_adv_evt) {
     case BLE_ADV_EVT_FAST:
         err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING);
         APP_ERROR_CHECK(err_code);
@@ -313,12 +288,11 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
  *
  * @param[in] p_ble_evt  Bluetooth stack event.
  */
-static void on_ble_evt(ble_evt_t *p_ble_evt)
+static void on_ble_evt(ble_evt_t* p_ble_evt)
 {
     uint32_t err_code;
 
-    switch (p_ble_evt->header.evt_id)
-    {
+    switch (p_ble_evt->header.evt_id) {
     case BLE_GAP_EVT_CONNECTED:
         err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
         APP_ERROR_CHECK(err_code);
@@ -345,7 +319,7 @@ static void on_ble_evt(ble_evt_t *p_ble_evt)
  *
  * @param[in] p_ble_evt  Bluetooth stack event.
  */
-static void ble_evt_dispatch(ble_evt_t *p_ble_evt)
+static void ble_evt_dispatch(ble_evt_t* p_ble_evt)
 {
     dm_ble_evt_handler(p_ble_evt);
     ble_conn_params_on_ble_evt(p_ble_evt);
@@ -384,8 +358,8 @@ static void ble_stack_init(void)
 
     ble_enable_params_t ble_enable_params;
     err_code = softdevice_enable_get_default_config(CENTRAL_LINK_COUNT,
-                                                    PERIPHERAL_LINK_COUNT,
-                                                    &ble_enable_params);
+        PERIPHERAL_LINK_COUNT,
+        &ble_enable_params);
     APP_ERROR_CHECK(err_code);
 
     // Custom services count
@@ -414,24 +388,21 @@ static void ble_stack_init(void)
 void bsp_event_handler(bsp_event_t event)
 {
     uint32_t err_code;
-    switch (event)
-    {
+    switch (event) {
     case BSP_EVENT_SLEEP:
         sleep_mode_enter();
         break;
 
     case BSP_EVENT_DISCONNECT:
         err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-        if (err_code != NRF_ERROR_INVALID_STATE)
-        {
+        if (err_code != NRF_ERROR_INVALID_STATE) {
             APP_ERROR_CHECK(err_code);
         }
         break;
 
     case BSP_EVENT_WHITELIST_OFF:
         err_code = ble_advertising_restart_without_whitelist();
-        if (err_code != NRF_ERROR_INVALID_STATE)
-        {
+        if (err_code != NRF_ERROR_INVALID_STATE) {
             APP_ERROR_CHECK(err_code);
         }
         break;
@@ -445,15 +416,14 @@ void bsp_event_handler(bsp_event_t event)
  *
  * @param[in] p_evt  Data associated to the device manager event.
  */
-static uint32_t device_manager_evt_handler(dm_handle_t const *p_handle,
-                                           dm_event_t const *p_event,
-                                           ret_code_t event_result)
+static uint32_t device_manager_evt_handler(dm_handle_t const* p_handle,
+    dm_event_t const* p_event,
+    ret_code_t event_result)
 {
     APP_ERROR_CHECK(event_result);
 
 #ifdef BLE_DFU_APP_SUPPORT
-    if (p_event->event_id == DM_EVT_LINK_SECURED)
-    {
+    if (p_event->event_id == DM_EVT_LINK_SECURED) {
         app_context_load(p_handle);
     }
 #endif // BLE_DFU_APP_SUPPORT
@@ -469,7 +439,7 @@ static uint32_t device_manager_evt_handler(dm_handle_t const *p_handle,
 static void device_manager_init(bool erase_bonds)
 {
     uint32_t err_code;
-    dm_init_param_t init_param = {.clear_persistent_data = erase_bonds};
+    dm_init_param_t init_param = { .clear_persistent_data = erase_bonds };
     dm_application_param_t register_param;
 
     // Initialize persistent storage module.
@@ -509,7 +479,7 @@ static void advertising_init(void)
     advdata.name_type = BLE_ADVDATA_FULL_NAME;
     advdata.flags = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
 
-    ble_adv_modes_config_t options = {0};
+    ble_adv_modes_config_t options = { 0 };
     options.ble_adv_fast_enabled = BLE_ADV_FAST_ENABLED;
     options.ble_adv_fast_interval = APP_ADV_INTERVAL;
     //options.ble_adv_fast_timeout  = APP_ADV_TIMEOUT_IN_SECONDS;
@@ -521,7 +491,7 @@ static void advertising_init(void)
     manuf_data_response.data.size = sizeof(data);
 
     ble_advdata_t advdata_response;
-    ble_uuid_t m_adv_uuids[] = {{BLE_UUID_STATUS_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}};
+    ble_uuid_t m_adv_uuids[] = { { BLE_UUID_STATUS_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN } };
 
     memset(&advdata_response, 0, sizeof(advdata_response));
 
@@ -549,13 +519,13 @@ static void services_init(void)
  *
  * @param[out] p_erase_bonds  Will be true if the clear bonding button was pressed to wake the application up.
  */
-static void buttons_leds_init(bool *p_erase_bonds)
+static void buttons_leds_init(bool* p_erase_bonds)
 {
     bsp_event_t startup_event;
 
     uint32_t err_code = bsp_init(BSP_INIT_LED | BSP_INIT_BUTTONS,
-                                 APP_TIMER_TICKS(100, APP_TIMER_PRESCALER),
-                                 bsp_event_handler);
+        APP_TIMER_TICKS(100, APP_TIMER_PRESCALER),
+        bsp_event_handler);
     APP_ERROR_CHECK(err_code);
 
     err_code = bsp_btn_ble_init(NULL, &startup_event);
@@ -572,7 +542,7 @@ static void power_manage(void)
     APP_ERROR_CHECK(err_code);
 }
 
-void controller_cb(controller_state_t *state)
+void controller_cb(controller_state_t* state)
 {
     status_characteristic_update(&m_status_service, state->position, state->target, state->movement, state->global_switch);
 }
@@ -583,14 +553,11 @@ void system_init()
     controller_register_cb(controller_cb);
 }
 
-void uart_error_handle(app_uart_evt_t * p_event)
+void uart_error_handle(app_uart_evt_t* p_event)
 {
-    if (p_event->evt_type == APP_UART_COMMUNICATION_ERROR)
-    {
+    if (p_event->evt_type == APP_UART_COMMUNICATION_ERROR) {
         APP_ERROR_HANDLER(p_event->data.error_communication);
-    }
-    else if (p_event->evt_type == APP_UART_FIFO_ERROR)
-    {
+    } else if (p_event->evt_type == APP_UART_FIFO_ERROR) {
         APP_ERROR_HANDLER(p_event->data.error_code);
     }
 }
@@ -603,6 +570,7 @@ int main(void)
     bool erase_bonds;
 
     // Initialize.
+    m45_init();
     timers_init();
     buttons_leds_init(&erase_bonds);
     ble_stack_init();
@@ -617,62 +585,50 @@ int main(void)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
-    const app_uart_comm_params_t comm_params =
-        {
-            RX_PIN_NUMBER,
-            TX_PIN_NUMBER,
-            RTS_PIN_NUMBER,
-            CTS_PIN_NUMBER,
-            APP_UART_FLOW_CONTROL_DISABLED,
-            false,
-            UART_BAUDRATE_BAUDRATE_Baud115200};
+    const app_uart_comm_params_t comm_params = {
+        RX_PIN_NUMBER,
+        TX_PIN_NUMBER,
+        RTS_PIN_NUMBER,
+        CTS_PIN_NUMBER,
+        APP_UART_FLOW_CONTROL_DISABLED,
+        false,
+        UART_BAUDRATE_BAUDRATE_Baud115200
+    };
 
     APP_UART_FIFO_INIT(&comm_params,
-                       UART_RX_BUF_SIZE,
-                       UART_TX_BUF_SIZE,
-                       uart_error_handle,
-                       APP_IRQ_PRIORITY_LOW,
-                       err_code);
+        UART_RX_BUF_SIZE,
+        UART_TX_BUF_SIZE,
+        uart_error_handle,
+        APP_IRQ_PRIORITY_LOW,
+        err_code);
 
     APP_ERROR_CHECK(err_code);
-    //char c = 0;
-    // Enter main loop.
+
     printf("\n\rStart: \n\r");
+    for (;;) {
+        uint8_t c;
 
-    while (true)
-    {
-        uint8_t cr;
-        while(app_uart_get(&cr) != NRF_SUCCESS);
-        while(app_uart_put(cr) != NRF_SUCCESS);
+        if (app_uart_get(&c) == NRF_SUCCESS) {
+            while (app_uart_put(c) != NRF_SUCCESS)
+                ;
 
-        if (cr == 'q' || cr == 'Q')
-        {
-            printf(" \n\rExit!\n\r");
-
-            while (true)
-            {
-                // Do nothing.
+            if (c == 'u') {
+                controller_move(MOVE_DIRECTION_UP);
+            } else if (c == 'd') {
+                controller_move(MOVE_DIRECTION_DOWN);
+            } else if (c == 's') {
+                controller_stop();
+            } else if (c == 't') {
+                controller_target_position_set(6);
+            } else if (c == '0') {
+                controller_target_position_set(0);
+            } else if (c == 'o') {
+                controller_switch(SWITCH_OFF);
+            } else if (c == 'i') {
+                controller_switch(SWITCH_ON);
             }
         }
-    }
-    for (;;)
-    {
-        /*				c = SEGGER_RTT_WaitKey();
-				if(c == 'u'){
-						controller_move(MOVE_DIRECTION_UP);
-				} else if (c == 'd') {
-						controller_move(MOVE_DIRECTION_DOWN);
-				} else if (c == 's') {
-						controller_stop();
-				} else if (c == 't') {
-						controller_target_position_set(6);
-				} else if (c == '0') {
-						controller_target_position_set(0);
-				} else if (c == 'o') {
-						controller_switch(SWITCH_OFF);
-				} else if (c == 'i') {
-						controller_switch(SWITCH_ON);
-				}*/
+
         power_manage();
     }
 }
