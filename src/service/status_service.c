@@ -1,9 +1,9 @@
-#include <stdint.h>
-#include <string.h>
 #include "status_service.h"
 #include "ble_srv_common.h"
 #include "app_error.h"
 #include "nrf_gpio.h"
+#include "nrf_log.h"
+#include <string.h>
 
 #define STATUS_CHAR_LENGTH 4
 
@@ -96,9 +96,9 @@ void status_service_init(ble_ss_t *p_status_service)
 	// Print messages to Segger Real Time Terminal
 	// UNCOMMENT THE FOUR LINES BELOW AFTER INITIALIZING THE SERVICE OR THE EXAMPLE WILL NOT COMPILE.
 	//SEGGER_RTT_WriteString(0, "Exectuing our_service_init().\n"); // Print message to RTT to the application flow
-	//SEGGER_RTT_printf(0, "Service UUID: 0x%#04x\n", service_uuid.uuid); // Print service UUID should match definition BLE_UUID_OUR_SERVICE
-	//SEGGER_RTT_printf(0, "Service UUID type: 0x%#02x\n", service_uuid.type); // Print UUID type. Should match BLE_UUID_TYPE_VENDOR_BEGIN. Search for BLE_UUID_TYPES in ble_types.h for more info
-	//SEGGER_RTT_printf(0, "Service handle: 0x%#04x\n", p_our_service->service_handle); // Print out the service handle. Should match service handle shown in MCP under Attribute values
+	//NRF_LOG_PRINTF(0, "Service UUID: 0x%#04x\n", service_uuid.uuid); // Print service UUID should match definition BLE_UUID_OUR_SERVICE
+	//NRF_LOG_PRINTF(0, "Service UUID type: 0x%#02x\n", service_uuid.type); // Print UUID type. Should match BLE_UUID_TYPE_VENDOR_BEGIN. Search for BLE_UUID_TYPES in ble_types.h for more info
+	//NRF_LOG_PRINTF(0, "Service handle: 0x%#04x\n", p_our_service->service_handle); // Print out the service handle. Should match service handle shown in MCP under Attribute values
 }
 
 void on_write(ble_ss_t *p_status_service, ble_evt_t *p_ble_evt)

@@ -32,7 +32,6 @@
 #include "app_error.h"
 #include "app_timer.h"
 #include "app_trace.h"
-#include "app_uart.h"
 #include "ble.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
@@ -49,6 +48,7 @@
 #include "nordic_common.h"
 #include "nrf.h"
 #include "nrf_gpio.h"
+#include "nrf_log.h"
 #include "pstorage.h"
 #include "sensorsim.h"
 #include "softdevice_handler.h"
@@ -133,9 +133,6 @@ static void timers_init(void)
 
     app_timer_create(&m_our_char_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
 }
-#define MAX_TEST_DATA_BYTES (15U) /**< max number of test bytes to be used for tx and rx. */
-#define UART_TX_BUF_SIZE 256 /**< UART TX buffer size. */
-#define UART_RX_BUF_SIZE 1
 
 /**@brief Function for the GAP initialization.
  *
@@ -553,15 +550,6 @@ void system_init()
     controller_register_cb(controller_cb);
 }
 
-void uart_error_handle(app_uart_evt_t* p_event)
-{
-    if (p_event->evt_type == APP_UART_COMMUNICATION_ERROR) {
-        APP_ERROR_HANDLER(p_event->data.error_communication);
-    } else if (p_event->evt_type == APP_UART_FIFO_ERROR) {
-        APP_ERROR_HANDLER(p_event->data.error_code);
-    }
-}
-
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -569,13 +557,16 @@ int main(void)
     uint32_t err_code;
     bool erase_bonds;
 
+    APP_ERROR_CHECK(NRF_LOG_INIT());
+    NRF_LOG_PRINTF("Acromegaly!\r\n");
+
     // Initialize.
-    m45_init();
     timers_init();
     buttons_leds_init(&erase_bonds);
     ble_stack_init();
     device_manager_init(erase_bonds);
     gap_params_init();
+    m45_init();
     system_init();
     services_init();
     advertising_init();
@@ -585,49 +576,43 @@ int main(void)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
-    const app_uart_comm_params_t comm_params = {
-        RX_PIN_NUMBER,
-        TX_PIN_NUMBER,
-        RTS_PIN_NUMBER,
-        CTS_PIN_NUMBER,
-        APP_UART_FLOW_CONTROL_DISABLED,
-        false,
-        UART_BAUDRATE_BAUDRATE_Baud115200
-    };
+    // uint8_t val[] = { 'a', 'v', 'd', 'a', '!' };
+    //     uint8_t res[8];
+    //     NRF_LOG_PRINTF("Going to read\n\r");
+    //     //m45pe_write(0x0A, val, 5);
+    //     m45pe_read(0x0A, res, 5);
 
-    APP_UART_FIFO_INIT(&comm_params,
-        UART_RX_BUF_SIZE,
-        UART_TX_BUF_SIZE,
-        uart_error_handle,
-        APP_IRQ_PRIORITY_LOW,
-        err_code);
+    //     NRF_LOG_PRINTF(" Received: ");
+    //     int i = 0;
+    //     for (i = 0; i < 5; i++) {
+    //         NRF_LOG_PRINTF("%c", res[i]);
+    //     }
+    // NRF_LOG_PRINTF(" \n\rReceived:\n\r ");
+    // printf("\n\rStart: \n\r");
 
-    APP_ERROR_CHECK(err_code);
-
-    printf("\n\rStart: \n\r");
     for (;;) {
-        uint8_t c;
+        // uint8_t c;
 
-        if (app_uart_get(&c) == NRF_SUCCESS) {
-            while (app_uart_put(c) != NRF_SUCCESS)
-                ;
+        // if (app_uart_get(&c) == NRF_SUCCESS) {
+        //     while (app_uart_put(c) != NRF_SUCCESS)
+        //         ;
 
-            if (c == 'u') {
-                controller_move(MOVE_DIRECTION_UP);
-            } else if (c == 'd') {
-                controller_move(MOVE_DIRECTION_DOWN);
-            } else if (c == 's') {
-                controller_stop();
-            } else if (c == 't') {
-                controller_target_position_set(6);
-            } else if (c == '0') {
-                controller_target_position_set(0);
-            } else if (c == 'o') {
-                controller_switch(SWITCH_OFF);
-            } else if (c == 'i') {
-                controller_switch(SWITCH_ON);
-            }
-        }
+        //     if (c == 'u') {
+        //         controller_move(MOVE_DIRECTION_UP);
+        //     } else if (c == 'd') {
+        //         controller_move(MOVE_DIRECTION_DOWN);
+        //     } else if (c == 's') {
+        //         controller_stop();
+        //     } else if (c == 't') {
+        //         controller_target_position_set(6);
+        //     } else if (c == '0') {
+        //         controller_target_position_set(0);
+        //     } else if (c == 'o') {
+        //         controller_switch(SWITCH_OFF);
+        //     } else if (c == 'i') {
+        //         controller_switch(SWITCH_ON);
+        //     }
+        // }
 
         power_manage();
     }

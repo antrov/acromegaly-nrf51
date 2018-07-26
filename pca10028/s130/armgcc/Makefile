@@ -76,6 +76,9 @@ $(abspath $(SDK_ROOT)/components/softdevice/common/softdevice_handler/softdevice
 $(abspath $(SDK_ROOT)/components/toolchain/system_nrf51.c) \
 $(abspath $(SDK_ROOT)/examples/bsp/bsp.c) \
 $(abspath $(SDK_ROOT)/examples/bsp/bsp_btn_ble.c) \
+$(abspath $(SDK_ROOT)/external/segger_rtt/RTT_Syscalls_GCC.c) \
+$(abspath $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c) \
+$(abspath $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c) \
 
 #assembly files common to all targets
 ASM_SOURCE_FILES  = $(abspath $(SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf51.s)
@@ -121,6 +124,7 @@ INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain/CMSIS/Include)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain/gcc)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/examples/bsp)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/external/segger_rtt)
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)
@@ -130,7 +134,8 @@ OUTPUT_BINARY_DIRECTORY = $(OBJECT_DIRECTORY)
 BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LISTING_DIRECTORY) )
 
 #flags common to all targets
-CFLAGS  = -DNRF_LOG_USES_UART=0
+CFLAGS  = -DNRF_LOG_USES_UART=1
+CFLAGS += -DNRF_LOG_USES_RTT=0
 CFLAGS += -DBOARD_PCA10028
 CFLAGS += -DSOFTDEVICE_PRESENT
 CFLAGS += -DNRF51
@@ -156,6 +161,7 @@ LDFLAGS += --specs=nano.specs -lc -lnosys
 # Assembler flags
 ASMFLAGS += -x assembler-with-cpp
 ASMFLAGS += -DNRF_LOG_USES_UART=1
+ASMFLAGS += -DNRF_LOG_USES_RTT=0
 ASMFLAGS += -DBOARD_PCA10028
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DNRF51

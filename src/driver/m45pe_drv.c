@@ -6,7 +6,6 @@
 #include "nrf_drv_spi.h"
 #include "nrf_gpio.h"
 #include "nrf_log.h"
-#include <stdio.h>
 #include <string.h>
 
 #define WRITE_ENABLED 0x06
@@ -112,18 +111,4 @@ void m45_init()
     spi_xfer_done = true;
 
     APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, spi_event_handler));
-
-    NRF_LOG_PRINTF("SPI Initialized\n");
-
-    // uint8_t val[] = { 'a', 'v', 'd', 'a', '!' };
-    uint8_t res[8];
-
-    //m45pe_write(0x0A, val, 5);
-    m45pe_read(0x0A, res, 5);
-
-    NRF_LOG_PRINTF(" Received: ");
-    int i = 0;
-    for (i = 0; i < 5; i++) {
-        printf("%c", res[i]);
-    }
 }
