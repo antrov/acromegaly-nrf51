@@ -45,6 +45,7 @@
 #include "ctrl_service.h"
 #include "device_manager.h"
 #include "m45pe_drv.h"
+#include "m45pe_keys.h"
 #include "nordic_common.h"
 #include "nrf.h"
 #include "nrf_gpio.h"
@@ -97,6 +98,8 @@ static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the curr
 
 ble_ss_t m_status_service;
 ble_ctrl_service_t m_ctrl_service;
+controller_state_t ctrl_state;
+uint8_t ctrl_state_changed = 0x00;
 
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -541,12 +544,20 @@ static void power_manage(void)
 
 void controller_cb(controller_state_t* state)
 {
-    status_characteristic_update(&m_status_service, state->position, state->target, state->movement, state->global_switch);
+    if (ctrl_state_changed == 0x00) {
+        memcpy(&ctrl_state, state, sizeof(controller_state_t));
+        ctrl_state_changed = 0x01;
+    }
 }
 
 void system_init()
 {
-    controller_init();
+    int16_t tmp = 1;
+    m45pe_read(FLASH_CTRL_POS_KEY, (uint8_t*)&tmp, sizeof(int16_t));
+
+    NRF_LOG_PRINTF("Read %d\r\n", tmp);
+
+    controller_init(tmp);
     controller_register_cb(controller_cb);
 }
 
@@ -576,20 +587,6 @@ int main(void)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
-    // uint8_t val[] = { 'a', 'v', 'd', 'a', '!' };
-    //     uint8_t res[8];
-    //     NRF_LOG_PRINTF("Going to read\n\r");
-    //     //m45pe_write(0x0A, val, 5);
-    //     m45pe_read(0x0A, res, 5);
-
-    //     NRF_LOG_PRINTF(" Received: ");
-    //     int i = 0;
-    //     for (i = 0; i < 5; i++) {
-    //         NRF_LOG_PRINTF("%c", res[i]);
-    //     }
-    // NRF_LOG_PRINTF(" \n\rReceived:\n\r ");
-    // printf("\n\rStart: \n\r");
-
     for (;;) {
         // uint8_t c;
 
@@ -613,6 +610,12 @@ int main(void)
         //         controller_switch(SWITCH_ON);
         //     }
         // }
+
+        if (ctrl_state_changed == 0x01) {
+            m45pe_write(FLASH_CTRL_POS_KEY, (uint8_t*)&ctrl_state.position, sizeof(int16_t));
+            status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.movement, ctrl_state.global_switch);
+            ctrl_state_changed = 0x00;
+        }
 
         power_manage();
     }

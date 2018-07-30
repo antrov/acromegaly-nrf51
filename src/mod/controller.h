@@ -1,6 +1,9 @@
 #ifndef CONTROLLER_H__
 #define CONTROLLER_H__
 
+#include <stdint.h>
+#include <string.h>
+
 #define MOVE_DIRECTION_UP			0xCB
 #define MOVE_DIRECTION_DOWN		0x92
 #define MOVE_DIRECTION_NONE		0xA1
@@ -19,7 +22,7 @@ typedef struct
 
 typedef void (*controller_cb_t)(controller_state_t* block);
 
-void controller_init(void);
+void controller_init(int position);
 void controller_register_cb(controller_cb_t cb);
 void controller_move(uint8_t direction);
 void controller_target_position_set(int16_t position);

@@ -6,6 +6,7 @@
 #include "nrf_drv_spi.h"
 #include "nrf_gpio.h"
 #include "nrf_log.h"
+#include <stdint.h>
 #include <string.h>
 
 #define WRITE_ENABLED 0x06
@@ -38,7 +39,8 @@ void spi_event_handler(nrf_drv_spi_evt_t const* p_event)
 }
 
 void m45pe_transfer_blocking(uint8_t tx_len, uint8_t rx_len)
-{ /*
+{
+    /*
     NRF_LOG_PRINTF(" Writing: ");
     int i = 0;
     for (i = 0; i < tx_len; i++)
@@ -47,11 +49,15 @@ void m45pe_transfer_blocking(uint8_t tx_len, uint8_t rx_len)
     }
     NRF_LOG_PRINTF("\n\r");*/
 
-    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, m_tx_buf, tx_len, m_rx_buf, tx_len + rx_len));
+    nrf_drv_spi_transfer(&spi, m_tx_buf, tx_len, m_rx_buf, tx_len + rx_len);
 
-    while (!spi_xfer_done) {
-        __WFE();
-    }
+    
+
+    // while (!spi_xfer_done) {
+        // __WFE();
+    // }
+
+    // NRF_LOG_PRINTF_ERROR("rec: %ld\r\n", code);
 
     nrf_delay_ms(10);
 }
@@ -62,15 +68,16 @@ void m45pe_write(uint8_t key, uint8_t* val, uint8_t len)
         return;
 
     spi_xfer_done = false;
-    memset(m_tx_buf, 0, TX_LENGTH);
+    memset(m_tx_buf, 0, TX_LENGTH * sizeof(uint8_t));
 
     m_tx_buf[0] = WRITE_ENABLED;
     m45pe_transfer_blocking(1, 0);
 
     m_tx_buf[0] = WRITE_PAGE;
     m_tx_buf[3] = key;
-    memcpy(m_tx_buf + 4, val, len);
+    memcpy(m_tx_buf + 4 * sizeof(uint8_t), val, len * sizeof(uint8_t));
 
+    // NRF_LOG_PRINTF("Writ %x %x\r\n", val[0], val[1]);
     m45pe_transfer_blocking(len + 4, 0);
 }
 
