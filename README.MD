@@ -20,3 +20,25 @@ JLinkRTTClient
 ```bash
 screen /dev/tty.usbserial-A602JN7W 115200
 ```
+
+## BLE Services
+
+### Control Service - 0xB00B
+
+Responsible for receiving control instructions, like target position, move direction or switch state.
+
+#### Characteristic - 0xBEEF
+```
+CTRL_VALUE_MOTOR_MOVEMENT       0x01
+CTRL_VALUE_MOTOR_POSITION       0x02
+CTRL_VALUE_POWER_SWITCH         0x03
+```
+
+### Status Service - 0xABCD
+
+#### Characteristic - 0xBEEF
+
+0,1 - Pos
+2-3 - Target
+4 - Direction
+5 - Switch

@@ -552,12 +552,13 @@ void controller_cb(controller_state_t* state)
 
 void system_init()
 {
-    int16_t tmp = 1;
+    int16_t tmp = 0;
     m45pe_read(FLASH_CTRL_POS_KEY, (uint8_t*)&tmp, sizeof(int16_t));
 
     NRF_LOG_PRINTF("Read %d\r\n", tmp);
 
-    controller_init(tmp);
+    controller_init(0);
+    // controller_init(tmp);
     controller_register_cb(controller_cb);
 }
 

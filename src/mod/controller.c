@@ -19,8 +19,6 @@
 #define GPIO_TICK_INPUT 29
 #define GPIO_TICK_OUTPUT 01 /* Tick PWM generator, fo testing purpoese */
 
-#define MIN_POSITION 0 /* Defined in cm, different from NIL_POSITION */
-#define MAX_POSITION 1000 /* Defined in cm */
 #define NIL_POSITION -1 /* Marks target as unset */
 
 #define DIRECTION_DEBUG(direction) direction == MOVE_DIRECTION_UP ? 1 : (direction == MOVE_DIRECTION_DOWN ? -1 : 0)
@@ -124,10 +122,10 @@ void controller_move(uint8_t direction)
 
     switch (direction) {
     case MOVE_DIRECTION_DOWN:
-        motor = m_state.position > MIN_POSITION ? GPIO_MOTOR_DOWN : 0;
+        motor = GPIO_MOTOR_DOWN;
         break;
     case MOVE_DIRECTION_UP:
-        motor = m_state.position < MAX_POSITION ? GPIO_MOTOR_UP : 0;
+        motor = GPIO_MOTOR_UP;
         break;
     case MOVE_DIRECTION_NONE:
     default:
@@ -135,9 +133,9 @@ void controller_move(uint8_t direction)
     }
 
     if (motor == 0x00) {
-        NRF_LOG_PRINTF("Controller move not allowed. Stopping\n");
+        NRF_LOG_PRINTF("Ctrl dir did not change. Stopping\r\n");
     } else {
-        NRF_LOG_PRINTF("Controller move with direction %d (current %d) from positon %d\n", DIRECTION_DEBUG(direction), DIRECTION_DEBUG(m_state.movement), m_state.position);
+        NRF_LOG_PRINTF("Ctrl dir changed to %d\r\n", DIRECTION_DEBUG(direction));
 
         m_state.movement = direction;
         nrf_drv_gpiote_out_set(motor);
@@ -159,13 +157,11 @@ void controller_target_position_set(int16_t target)
         return;
     }
 
-    target = target < MIN_POSITION ? MIN_POSITION : (target > MAX_POSITION ? MAX_POSITION : target);
-
     if (target == m_state.position || target == m_state.target) {
         return;
     }
 
-    NRF_LOG_PRINTF("Set target currentPosition %d (%d current)\n", target, m_state.position);
+    NRF_LOG_PRINTF("Set target currentPosition %d (%d current)\r\n", target, m_state.position);
 
     m_state.target = target;
 
@@ -205,19 +201,16 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
     NRF_LOG_PRINTF("Tick at %d; targ %d; dir: %d\r\n", m_state.position, m_state.target, DIRECTION_DEBUG(m_state.movement));
 
-    bool target = m_state.target != NIL_POSITION;
-    bool stop = false;
+    bool stop = m_state.target != NIL_POSITION;
 
     switch (m_state.movement) {
     case MOVE_DIRECTION_DOWN:
         update_current_position(m_state.position - 1);
-        target &= m_state.position <= m_state.target;
-        stop = m_state.position <= MIN_POSITION;
+        stop &= m_state.position <= m_state.target;
         break;
     case MOVE_DIRECTION_UP:
         update_current_position(m_state.position + 1);
-        target &= m_state.position >= m_state.target;
-        stop = m_state.position >= MAX_POSITION;
+        stop &= m_state.position >= m_state.target;
         break;
     case MOVE_DIRECTION_NONE:
         stop = true;
@@ -228,12 +221,10 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 
     NRF_LOG_PRINTF("Pos -> %d\r\n", m_state.position);
 
-    if (stop || target) {
+    if (stop) {
         controller_stop();
-    }
-
-    if (target) {
         m_state.target = NIL_POSITION;
+
         if (m_cb)
             m_cb(&m_state);
     }

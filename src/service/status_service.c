@@ -3,9 +3,10 @@
 #include "app_error.h"
 #include "nrf_gpio.h"
 #include "nrf_log.h"
+#include "aufzug_config.h"
 #include <string.h>
 
-#define STATUS_CHAR_LENGTH 4
+#define STATUS_CHAR_LENGTH 6
 
 static uint32_t status_char_add(ble_ss_t *p_status_service)
 {
@@ -129,7 +130,7 @@ void ble_status_service_on_ble_evt(ble_ss_t *p_status_service, ble_evt_t *p_ble_
 	}
 }
 
-void status_characteristic_update(ble_ss_t *p_status_service, uint8_t pos, uint8_t target, uint8_t mov, uint8_t sw)
+void status_characteristic_update(ble_ss_t *p_status_service, int16_t pos, int16_t target, uint8_t mov, uint8_t sw)
 {
 	if (p_status_service->conn_handle != BLE_CONN_HANDLE_INVALID)
 	{
@@ -139,10 +140,15 @@ void status_characteristic_update(ble_ss_t *p_status_service, uint8_t pos, uint8
 		uint8_t value[STATUS_CHAR_LENGTH];
 		memset(&value, 0, sizeof(uint8_t) * len);
 
-		value[0] = pos;
-		value[1] = target;
-		value[2] = mov;
-		value[3] = sw;
+		int32_t umPosition = (pos * TICK_TO_HEIGHT_MULTI) + BASE_HEIGHT;
+
+		NRF_LOG_PRINTF("Stat: %d (@ %d)\r\n", umPosition, pos);
+
+		memcpy(value, (uint8_t *)&umPosition, sizeof(int32_t));
+		// memcpy(value + sizeof(int32_t), (uint8_t *)&target, sizeof(int16_t));
+
+		value[4] = mov;
+		value[5] = sw;
 
 		hvx_params.handle = p_status_service->char_handles.value_handle;
 		hvx_params.type = BLE_GATT_HVX_NOTIFICATION;
