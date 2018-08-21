@@ -284,6 +284,11 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     }
 }
 
+void update_status_service()
+{
+    status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.movement, ctrl_state.global_switch);
+}
+
 /**@brief Function for handling the Application's BLE Stack events.
  *
  * @param[in] p_ble_evt  Bluetooth stack event.
@@ -299,6 +304,7 @@ static void on_ble_evt(ble_evt_t* p_ble_evt)
 
         m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
         //application_timers_start();
+        update_status_service();
         break;
 
     case BLE_GAP_EVT_DISCONNECTED:
@@ -504,7 +510,9 @@ static void advertising_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-/**@brief Function for initializing services that will be used by the application.
+
+
+/**@brief Function for initializing BLE services that will be used by the application.
  */
 static void services_init(void)
 {
@@ -555,10 +563,10 @@ void system_init()
     int16_t tmp = 0;
     m45pe_read(FLASH_CTRL_POS_KEY, (uint8_t*)&tmp, sizeof(int16_t));
 
-    NRF_LOG_PRINTF("Read %d\r\n", tmp);
+    // NRF_LOG_PRINTF("Read %d\r\n", tmp);
 
-    controller_init(0);
-    // controller_init(tmp);
+    // controller_init(0);
+    controller_init(tmp);
     controller_register_cb(controller_cb);
 }
 
@@ -589,32 +597,9 @@ int main(void)
     APP_ERROR_CHECK(err_code);
 
     for (;;) {
-        // uint8_t c;
-
-        // if (app_uart_get(&c) == NRF_SUCCESS) {
-        //     while (app_uart_put(c) != NRF_SUCCESS)
-        //         ;
-
-        //     if (c == 'u') {
-        //         controller_move(MOVE_DIRECTION_UP);
-        //     } else if (c == 'd') {
-        //         controller_move(MOVE_DIRECTION_DOWN);
-        //     } else if (c == 's') {
-        //         controller_stop();
-        //     } else if (c == 't') {
-        //         controller_target_position_set(6);
-        //     } else if (c == '0') {
-        //         controller_target_position_set(0);
-        //     } else if (c == 'o') {
-        //         controller_switch(SWITCH_OFF);
-        //     } else if (c == 'i') {
-        //         controller_switch(SWITCH_ON);
-        //     }
-        // }
-
         if (ctrl_state_changed == 0x01) {
             m45pe_write(FLASH_CTRL_POS_KEY, (uint8_t*)&ctrl_state.position, sizeof(int16_t));
-            status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.movement, ctrl_state.global_switch);
+            update_status_service();
             ctrl_state_changed = 0x00;
         }
 

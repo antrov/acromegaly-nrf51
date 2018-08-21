@@ -90,23 +90,13 @@ void status_service_init(ble_ss_t *p_status_service)
 	APP_ERROR_CHECK(err_code);
 
 	status_char_add(p_status_service);
-	// STEP 3: Declare 16 bit service and 128 bit base UUIDs and add them to BLE stack table
-
-	// STEP 4: Add our service
-
-	// Print messages to Segger Real Time Terminal
-	// UNCOMMENT THE FOUR LINES BELOW AFTER INITIALIZING THE SERVICE OR THE EXAMPLE WILL NOT COMPILE.
-	//SEGGER_RTT_WriteString(0, "Exectuing our_service_init().\n"); // Print message to RTT to the application flow
-	//NRF_LOG_PRINTF(0, "Service UUID: 0x%#04x\n", service_uuid.uuid); // Print service UUID should match definition BLE_UUID_OUR_SERVICE
-	//NRF_LOG_PRINTF(0, "Service UUID type: 0x%#02x\n", service_uuid.type); // Print UUID type. Should match BLE_UUID_TYPE_VENDOR_BEGIN. Search for BLE_UUID_TYPES in ble_types.h for more info
-	//NRF_LOG_PRINTF(0, "Service handle: 0x%#04x\n", p_our_service->service_handle); // Print out the service handle. Should match service handle shown in MCP under Attribute values
 }
 
 void on_write(ble_ss_t *p_status_service, ble_evt_t *p_ble_evt)
 {
 	ble_gatts_evt_write_t *p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
-	if (p_evt_write->handle == p_status_service->char_handles.value_handle && p_evt_write->len == 4)
+	if (p_evt_write->handle == p_status_service->char_handles.value_handle)
 	{
 	}
 }
