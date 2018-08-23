@@ -22,6 +22,7 @@
 #define NIL_POSITION -1 /* Marks target as unset */
 
 #define DIRECTION_DEBUG(direction) direction == MOVE_DIRECTION_UP ? 1 : (direction == MOVE_DIRECTION_DOWN ? -1 : 0)
+#define controller_call_cb() if (m_cb) m_cb(&m_state)
 
 static controller_cb_t m_cb; /* Current state of controller */
 static controller_state_t m_state; /* COntroller state callback method. Optional */
@@ -35,10 +36,7 @@ void switch_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 void update_current_position(int position)
 {
     m_state.position = position;
-
-    if (m_cb) {
-        m_cb(&m_state);
-    }
+    controller_call_cb();
 }
 
 void controller_init(int position)
@@ -83,7 +81,7 @@ void controller_init(int position)
     err_code = nrf_drv_gpiote_out_init(GPIO_SWITCH_CONTROL, &out_config);
     APP_ERROR_CHECK(err_code);
 
-	NRF_LOG_PRINTF("Ctrl init pos %d\r\n", position);
+    NRF_LOG_PRINTF("Ctrl init pos %d\r\n", position);
 
 /* Tick generator init */
 #if USE_TICK_GENERATOR
@@ -110,6 +108,7 @@ void update_tick_generator()
 void controller_register_cb(controller_cb_t cb)
 {
     m_cb = cb;
+    controller_call_cb();
 }
 
 void controller_move(uint8_t direction)
@@ -145,8 +144,7 @@ void controller_move(uint8_t direction)
     update_tick_generator();
 #endif
 
-    if (m_cb)
-        m_cb(&m_state);
+    controller_call_cb();
 }
 
 void controller_target_position_set(int16_t target)
@@ -172,8 +170,7 @@ void controller_target_position_set(int16_t target)
     } else
         return;
 
-    if (m_cb)
-        m_cb(&m_state);
+    controller_call_cb();
 }
 
 void controller_switch(uint8_t switch_state)
@@ -193,8 +190,7 @@ void controller_switch(uint8_t switch_state)
         return;
 
     m_state.global_switch = switch_state;
-    if (m_cb)
-        m_cb(&m_state);
+    controller_call_cb();
 }
 
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
@@ -224,9 +220,7 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
     if (stop) {
         controller_stop();
         m_state.target = NIL_POSITION;
-
-        if (m_cb)
-            m_cb(&m_state);
+        controller_call_cb();
     }
 }
 

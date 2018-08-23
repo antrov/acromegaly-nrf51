@@ -96,8 +96,8 @@ APP_TIMER_DEF(m_our_char_timer_id);
 
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the current connection. */
 
-ble_ss_t m_status_service;
-ble_ctrl_service_t m_ctrl_service;
+static ble_ss_t m_status_service;
+static ble_ctrl_service_t m_ctrl_service;
 controller_state_t ctrl_state;
 uint8_t ctrl_state_changed = 0x00;
 
@@ -115,6 +115,11 @@ uint8_t ctrl_state_changed = 0x00;
 void assert_nrf_callback(uint16_t line_num, const uint8_t* p_file_name)
 {
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
+}
+
+static void update_status_service()
+{
+    status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.movement, ctrl_state.global_switch);
 }
 
 static void timer_timeout_handler(void* p_context)
@@ -239,10 +244,6 @@ static void conn_params_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-static void application_timer_stop(void)
-{
-    app_timer_stop(m_our_char_timer_id);
-}
 /**@brief Function for putting the chip into sleep mode.
  *
  * @note This function will not return.
@@ -284,9 +285,11 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     }
 }
 
-void update_status_service()
+/**@brief Function called when other BLE device connects
+ */
+static void ble_on_connected()
 {
-    status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.movement, ctrl_state.global_switch);
+    update_status_service();
 }
 
 /**@brief Function for handling the Application's BLE Stack events.
@@ -303,13 +306,11 @@ static void on_ble_evt(ble_evt_t* p_ble_evt)
         APP_ERROR_CHECK(err_code);
 
         m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-        //application_timers_start();
-        update_status_service();
+        ble_on_connected();
         break;
 
     case BLE_GAP_EVT_DISCONNECTED:
         m_conn_handle = BLE_CONN_HANDLE_INVALID;
-        application_timer_stop();
         break;
 
     default:
@@ -510,8 +511,6 @@ static void advertising_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-
-
 /**@brief Function for initializing BLE services that will be used by the application.
  */
 static void services_init(void)
@@ -551,7 +550,7 @@ static void power_manage(void)
 }
 
 void controller_cb(controller_state_t* state)
-{
+{    
     if (ctrl_state_changed == 0x00) {
         memcpy(&ctrl_state, state, sizeof(controller_state_t));
         ctrl_state_changed = 0x01;
@@ -562,11 +561,12 @@ void system_init()
 {
     int16_t tmp = 0;
     m45pe_read(FLASH_CTRL_POS_KEY, (uint8_t*)&tmp, sizeof(int16_t));
-
-    // NRF_LOG_PRINTF("Read %d\r\n", tmp);
-
     // controller_init(0);
     controller_init(tmp);
+}
+
+void on_init_finished()
+{
     controller_register_cb(controller_cb);
 }
 
@@ -592,12 +592,14 @@ int main(void)
     advertising_init();
     conn_params_init();
 
+    on_init_finished();
+
     // Start execution.
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
-    APP_ERROR_CHECK(err_code);
+    APP_ERROR_CHECK(err_code);    
 
     for (;;) {
-        if (ctrl_state_changed == 0x01) {
+        if (ctrl_state_changed == 0x01) {    
             m45pe_write(FLASH_CTRL_POS_KEY, (uint8_t*)&ctrl_state.position, sizeof(int16_t));
             update_status_service();
             ctrl_state_changed = 0x00;
