@@ -119,7 +119,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t* p_file_name)
 
 static void update_status_service()
 {
-    status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.movement, ctrl_state.global_switch);
+    status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.movement);
 }
 
 static void timer_timeout_handler(void* p_context)
