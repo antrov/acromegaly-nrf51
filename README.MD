@@ -45,8 +45,8 @@ Allows to read and to subscribe for current controller state. Value of this char
 - on new peer connected
 - on internal status changed but with not guarantee of being most recent state
 
-#### Value
-|||
+#### Values
+|Bits|Value|
 :-: |:-
 **0 - 3** | `int32` currentPosition (µm)
 **4 - 7** | `int32` targetPosition (µm) 
