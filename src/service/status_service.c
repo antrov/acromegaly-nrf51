@@ -8,7 +8,7 @@
 
 #define STATUS_CHAR_LENGTH 9
 
-static uint32_t status_char_add(ble_ss_t* p_status_service)
+static uint32_t status_char_add(ble_status_service_t* p_status_service)
 {
     uint32_t err_code;
     ble_uuid_t char_uuid;
@@ -71,7 +71,7 @@ static uint32_t status_char_add(ble_ss_t* p_status_service)
  * @param[in]   p_our_service        Our Service structure.
  *
  */
-void status_service_init(ble_ss_t* p_status_service)
+void status_service_init(ble_status_service_t* p_status_service)
 {
     p_status_service->conn_handle = BLE_CONN_HANDLE_INVALID;
 
@@ -92,7 +92,7 @@ void status_service_init(ble_ss_t* p_status_service)
     status_char_add(p_status_service);
 }
 
-void ble_status_service_on_ble_evt(ble_ss_t* p_status_service, ble_evt_t* p_ble_evt)
+void ble_status_service_on_ble_evt(ble_status_service_t* p_status_service, ble_evt_t* p_ble_evt)
 {
     switch (p_ble_evt->header.evt_id) {
     case BLE_GAP_EVT_CONNECTED:
@@ -109,7 +109,7 @@ void ble_status_service_on_ble_evt(ble_ss_t* p_status_service, ble_evt_t* p_ble_
     }
 }
 
-void status_characteristic_update(ble_ss_t* p_status_service, int16_t pos, int16_t target, uint8_t mov)
+void status_characteristic_update(ble_status_service_t* p_status_service, int16_t pos, int16_t target, uint8_t mov)
 {
     if (p_status_service->conn_handle != BLE_CONN_HANDLE_INVALID) {
         ble_gatts_hvx_params_t hvx_params;

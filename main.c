@@ -96,7 +96,7 @@ APP_TIMER_DEF(m_our_char_timer_id);
 
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the current connection. */
 
-static ble_ss_t m_status_service;
+static ble_status_service_t m_status_service;
 static ble_ctrl_service_t m_ctrl_service;
 controller_state_t ctrl_state;
 uint8_t ctrl_state_changed = 0x00;
@@ -515,7 +515,7 @@ static void advertising_init(void)
  */
 static void services_init(void)
 {
-    memset(&m_status_service, 0, sizeof(ble_ss_t));
+    memset(&m_status_service, 0, sizeof(ble_status_service_t));
     memset(&m_ctrl_service, 0, sizeof(ble_ctrl_service_t));
 
     status_service_init(&m_status_service);

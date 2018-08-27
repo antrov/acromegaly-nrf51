@@ -31,10 +31,10 @@ All BLE items has 4-letter-hex UUIDs alluding to their destination (for better r
 Responsible for receiving control instructions, like target position, move direction or switch state.
 
 ### Characteristic - 0x5010 - aka SOLO
+Position values should be send in little endian order (0xDD04 -> 1245 mm)
 ```
-CTRL_VALUE_MOTOR_MOVEMENT       0x01
-CTRL_VALUE_MOTOR_POSITION       0x02
-CTRL_VALUE_POWER_SWITCH         0x03
+CTRL_COMMAND_FORCE_STOP 0xAA
+CTRL_COMMAND_SET_TARGET_POS 0x60
 ```
 
 ## Status Service - 0x5E1F - aka SELF
@@ -46,6 +46,7 @@ Allows to read and to subscribe for current controller state. Value of this char
 - on internal status changed but with not guarantee of being most recent state
 
 #### Values
+Particular values are transmitted in little endian order.
 |Bits|Value|
 :-: |:-
 **0 - 3** | `int32` currentPosition (µm)

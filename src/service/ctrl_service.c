@@ -1,13 +1,15 @@
 #include "ctrl_service.h"
 #include "app_error.h"
+#include "aufzug_config.h"
 #include "ble_srv_common.h"
 #include "controller.h"
 #include <stdint.h>
 #include <string.h>
 
-#define CTRL_VALUE_MOTOR_MOVEMENT 0x01
-#define CTRL_VALUE_MOTOR_POSITION 0x02
-#define CTRL_VALUE_POWER_SWITCH 0x03
+#define CTRL_COMMAND_FORCE_STOP 0xAA
+#define CTRL_COMMAND_SET_TARGET_POS 0x60
+
+#define CTRL_CHAR_LENGTH 3
 
 static uint32_t ctrl_char_add(ble_ctrl_service_t* p_ctrl_service)
 {
@@ -50,9 +52,9 @@ static uint32_t ctrl_char_add(ble_ctrl_service_t* p_ctrl_service)
 
     attr_char_value.p_uuid = &char_uuid;
     attr_char_value.p_attr_md = &attr_md;
-    attr_char_value.max_len = 2;
-    attr_char_value.init_len = 2;
-    uint8_t value[4] = { 0x00, 0x00 };
+    attr_char_value.max_len = CTRL_CHAR_LENGTH;
+    attr_char_value.init_len = CTRL_CHAR_LENGTH;
+    uint8_t value[CTRL_CHAR_LENGTH] = { 0 };
     attr_char_value.p_value = value;
 
     // Add our new characteristic to the service
@@ -86,20 +88,27 @@ void control_service_init(ble_ctrl_service_t* p_ctrl_service)
     ctrl_char_add(p_ctrl_service);
 }
 
+void ble_ctrl_service_on_cmd_set_target_pos(uint8_t* target)
+{
+    int16_t targetMm = 0;
+    memcpy(&targetMm, target, sizeof(targetMm));
+
+    int32_t targetUm = targetMm * 1000;
+    int16_t targetPos = (targetUm - BASE_HEIGHT) / TICK_TO_HEIGHT_MULTI;
+    controller_target_position_set(targetPos);
+}
+
 void ble_ctrl_service_on_write(ble_ctrl_service_t* p_ctrl_service, ble_evt_t* p_ble_evt)
 {
     ble_gatts_evt_write_t* p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
-    if (p_evt_write->handle == p_ctrl_service->char_handles.value_handle && p_evt_write->len == 2) {
+    if (p_evt_write->handle == p_ctrl_service->char_handles.value_handle && p_evt_write->len > 0) {
         switch (p_evt_write->data[0]) {
-        case CTRL_VALUE_MOTOR_MOVEMENT:
-            controller_move(p_evt_write->data[1]);
+        case CTRL_COMMAND_FORCE_STOP:
+            controller_stop();
             break;
-        case CTRL_VALUE_MOTOR_POSITION:
-            controller_target_position_set(p_evt_write->data[1]);
-            break;
-        case CTRL_VALUE_POWER_SWITCH:
-            controller_switch(p_evt_write->data[1]);
+        case CTRL_COMMAND_SET_TARGET_POS:
+            ble_ctrl_service_on_cmd_set_target_pos(&(p_evt_write->data[1]));
             break;
         default:
             break;

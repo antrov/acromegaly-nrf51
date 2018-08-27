@@ -159,7 +159,7 @@ void controller_target_position_set(int16_t target)
         return;
     }
 
-    NRF_LOG_PRINTF("Set target currentPosition %d (%d current)\r\n", target, m_state.position);
+    NRF_LOG_PRINTF("Set target to %d (%d current)\r\n", target, m_state.position);
 
     m_state.target = target;
 

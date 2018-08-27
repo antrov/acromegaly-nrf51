@@ -26,16 +26,16 @@ typedef struct
     uint16_t conn_handle;
     uint16_t service_handle;
     ble_gatts_char_handles_t char_handles;
-} ble_ss_t;
+} ble_status_service_t;
 
-void ble_status_service_on_ble_evt(ble_ss_t* p_status_service, ble_evt_t* p_ble_evt);
+void ble_status_service_on_ble_evt(ble_status_service_t* p_status_service, ble_evt_t* p_ble_evt);
 
 /**@brief Function for initializing our new service.
  *
  * @param[in]   p_our_service       Pointer to Our Service structure.
  */
-void status_service_init(ble_ss_t* p_status_service);
+void status_service_init(ble_status_service_t* p_status_service);
 
-void status_characteristic_update(ble_ss_t* p_status_service, int16_t pos, int16_t target, uint8_t mov);
+void status_characteristic_update(ble_status_service_t* p_status_service, int16_t pos, int16_t target, uint8_t mov);
 
 #endif /* _ OUR_SERVICE_H__ */
