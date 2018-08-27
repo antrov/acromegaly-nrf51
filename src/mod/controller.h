@@ -10,8 +10,6 @@
 #define SWITCH_OFF 0x00
 #define SWITCH_ON 0x01
 
-#define controller_stop() controller_move(MOVE_DIRECTION_NONE)
-
 typedef struct
 {
     int16_t position;
@@ -24,8 +22,7 @@ typedef void (*controller_cb_t)(controller_state_t* block);
 
 void controller_init(int position);
 void controller_register_cb(controller_cb_t cb);
-void controller_move(uint8_t direction);
 void controller_target_position_set(int16_t position);
-void controller_switch(uint8_t switch_state);
+void controller_stop();
 
 #endif

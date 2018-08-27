@@ -12,8 +12,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define GPIO_SWITCH_INPUT 25
-#define GPIO_SWITCH_CONTROL 28
+#define GPIO_MOTOR_ENABLED 28
 #define GPIO_MOTOR_UP 16
 #define GPIO_MOTOR_DOWN 15
 #define GPIO_TICK_INPUT 29
@@ -22,7 +21,9 @@
 #define NIL_POSITION -1 /* Marks target as unset */
 
 #define DIRECTION_DEBUG(direction) direction == MOVE_DIRECTION_UP ? 1 : (direction == MOVE_DIRECTION_DOWN ? -1 : 0)
-#define controller_call_cb() if (m_cb) m_cb(&m_state)
+#define controller_call_cb() \
+    if (m_cb)                \
+    m_cb(&m_state)
 
 static controller_cb_t m_cb; /* Current state of controller */
 static controller_state_t m_state; /* COntroller state callback method. Optional */
@@ -30,8 +31,9 @@ static controller_state_t m_state; /* COntroller state callback method. Optional
 static bool isInit = false; /* For single init of controller */
 
 void update_current_position(int position);
+void controller_move(uint8_t direction);
+void controller_switch(uint8_t switch_state);
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
-void switch_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 
 void update_current_position(int position)
 {
@@ -62,13 +64,6 @@ void controller_init(int position)
     APP_ERROR_CHECK(err_code);
     nrf_drv_gpiote_in_event_enable(GPIO_TICK_INPUT, true);
 
-    /* Switch Input pins config */
-    nrf_drv_gpiote_in_config_t in_config = GPIOTE_CONFIG_IN_SENSE_TOGGLE(true);
-    in_config.pull = NRF_GPIO_PIN_PULLUP;
-    err_code = nrf_drv_gpiote_in_init(GPIO_SWITCH_INPUT, &in_config, switch_pin_handler);
-    APP_ERROR_CHECK(err_code);
-    nrf_drv_gpiote_in_event_enable(GPIO_SWITCH_INPUT, true);
-
     /* Output Pins config */
     nrf_drv_gpiote_out_config_t out_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
 
@@ -78,7 +73,7 @@ void controller_init(int position)
     err_code = nrf_drv_gpiote_out_init(GPIO_MOTOR_DOWN, &out_config);
     APP_ERROR_CHECK(err_code);
 
-    err_code = nrf_drv_gpiote_out_init(GPIO_SWITCH_CONTROL, &out_config);
+    err_code = nrf_drv_gpiote_out_init(GPIO_MOTOR_ENABLED, &out_config);
     APP_ERROR_CHECK(err_code);
 
     NRF_LOG_PRINTF("Ctrl init pos %d\r\n", position);
@@ -133,11 +128,13 @@ void controller_move(uint8_t direction)
 
     if (motor == 0x00) {
         NRF_LOG_PRINTF("Ctrl dir did not change. Stopping\r\n");
+        controller_switch(SWITCH_OFF);
     } else {
         NRF_LOG_PRINTF("Ctrl dir changed to %d\r\n", DIRECTION_DEBUG(direction));
 
         m_state.movement = direction;
         nrf_drv_gpiote_out_set(motor);
+        controller_switch(SWITCH_ON);
     }
 
 #if USE_TICK_GENERATOR
@@ -145,6 +142,11 @@ void controller_move(uint8_t direction)
 #endif
 
     controller_call_cb();
+}
+
+void controller_stop()
+{
+    controller_move(MOVE_DIRECTION_NONE);
 }
 
 void controller_target_position_set(int16_t target)
@@ -175,22 +177,16 @@ void controller_target_position_set(int16_t target)
 
 void controller_switch(uint8_t switch_state)
 {
-
-    NRF_LOG_PRINTF("Controller switch to %d from %d (read %ld)\n", switch_state, m_state.global_switch, nrf_gpio_pin_read(GPIO_SWITCH_CONTROL));
-
-    if (m_state.global_switch == nrf_gpio_pin_read(GPIO_SWITCH_CONTROL) && m_state.global_switch == switch_state) {
-        return;
-    }
+    NRF_LOG_PRINTF("Ctrl sw to %d\r\n", switch_state);
 
     if (switch_state == SWITCH_OFF) {
-        nrf_drv_gpiote_out_clear(GPIO_SWITCH_CONTROL);
+        nrf_drv_gpiote_out_clear(GPIO_MOTOR_ENABLED);
     } else if (switch_state == SWITCH_ON) {
-        nrf_drv_gpiote_out_set(GPIO_SWITCH_CONTROL);
+        nrf_drv_gpiote_out_set(GPIO_MOTOR_ENABLED);
     } else
         return;
 
     m_state.global_switch = switch_state;
-    controller_call_cb();
 }
 
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
@@ -222,9 +218,4 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
         m_state.target = NIL_POSITION;
         controller_call_cb();
     }
-}
-
-void switch_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
-{
-    controller_switch(m_state.global_switch == SWITCH_OFF ? SWITCH_ON : SWITCH_OFF);
 }
