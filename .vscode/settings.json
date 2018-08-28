@@ -4,7 +4,8 @@
         "ble_advdata.h": "c",
         "aufzug_config.h": "c",
         "controller.h": "c",
-        "device_manager.h": "c"
+        "device_manager.h": "c",
+        "nrf_drv_timer.h": "c"
     },
     "C_Cpp.clang_format_fallbackStyle": "WebKit",
     "C_Cpp.errorSquiggles": "Disabled"

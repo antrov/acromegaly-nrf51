@@ -1,6 +1,7 @@
 #include "controller.h"
 #include "app_error.h"
 #include "app_pwm.h"
+#include "app_timer.h"
 #include "aufzug_config.h"
 #include "boards.h"
 #include "nrf.h"
@@ -25,15 +26,44 @@
     if (m_cb)                \
     m_cb(&m_state)
 
+#define APP_CTRL_TIMER_OP_QUEUE_SIZE 1 /**< Size of timer operation queues. */
+#define APP_CTRL_TIMER_PRESCALER 0 /**< Value of the RTC1 PRESCALER register. */
+
+APP_TIMER_DEF(m_app_ctrl_timer_id);
+#define APP_CTRL_TIMER_INTERVAL APP_TIMER_TICKS(500, APP_CTRL_TIMER_PRESCALER) // 1000 ms intervals
+
 static controller_cb_t m_cb; /* Current state of controller */
 static controller_state_t m_state; /* COntroller state callback method. Optional */
 
-static bool isInit = false; /* For single init of controller */
+int16_t m_previous_position = 0; /* Used to detect a premature end of movement */
 
 void update_current_position(int position);
 void controller_move(uint8_t direction);
 void controller_switch(uint8_t switch_state);
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
+
+static void timer_timeout_handler(void* p_context)
+{
+    nrf_gpio_pin_toggle(LED_2);
+
+    if (m_previous_position == m_state.position && m_state.movement != MOVE_DIRECTION_NONE && m_state.global_switch == SWITCH_ON) {
+        controller_stop();
+    }
+
+    m_previous_position = m_state.position;
+}
+
+/**@brief Function for the Timer initialization.
+ *
+ * @details Initializes the timer module. This creates and starts application timers.
+ */
+static void timers_init(void)
+{
+    // Initialize timer module.
+    APP_TIMER_INIT(APP_CTRL_TIMER_PRESCALER, APP_CTRL_TIMER_OP_QUEUE_SIZE, false);
+
+    app_timer_create(&m_app_ctrl_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
+}
 
 void update_current_position(int position)
 {
@@ -43,9 +73,6 @@ void update_current_position(int position)
 
 void controller_init(int position)
 {
-    if (isInit)
-        return;
-
     m_state.movement = MOVE_DIRECTION_UP;
     // m_state.movement = MOVE_DIRECTION_NONE;
     m_state.position = position;
@@ -84,7 +111,7 @@ void controller_init(int position)
     NRF_LOG_PRINTF("Init tick generator");
 #endif
 
-    isInit = true;
+    timers_init();
 }
 
 #if USE_TICK_GENERATOR
@@ -129,12 +156,15 @@ void controller_move(uint8_t direction)
     if (motor == 0x00) {
         NRF_LOG_PRINTF("Ctrl dir did not change. Stopping\r\n");
         controller_switch(SWITCH_OFF);
+        app_timer_stop(m_app_ctrl_timer_id);
+        m_state.target = NIL_POSITION;
     } else {
         NRF_LOG_PRINTF("Ctrl dir changed to %d\r\n", DIRECTION_DEBUG(direction));
 
         m_state.movement = direction;
         nrf_drv_gpiote_out_set(motor);
         controller_switch(SWITCH_ON);
+        app_timer_start(m_app_ctrl_timer_id, APP_CTRL_TIMER_INTERVAL, NULL);
     }
 
 #if USE_TICK_GENERATOR
@@ -213,9 +243,7 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 
     NRF_LOG_PRINTF("Pos -> %d\r\n", m_state.position);
 
-    if (stop) {
+    if (stop) {        
         controller_stop();
-        m_state.target = NIL_POSITION;
-        controller_call_cb();
     }
 }

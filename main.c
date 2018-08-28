@@ -91,8 +91,8 @@
 
 static dm_application_instance_t m_app_handle; /**< Application identifier allocated by device manager */
 
-APP_TIMER_DEF(m_our_char_timer_id);
-#define OUR_CHAR_TIMER_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER) // 1000 ms intervals
+APP_TIMER_DEF(m_app_main_timer_id);
+#define APP_MAIN_TIMER_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER) // 1000 ms intervals
 
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the current connection. */
 
@@ -138,8 +138,8 @@ static void timers_init(void)
 {
     // Initialize timer module.
     APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);
-
-    app_timer_create(&m_our_char_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
+    
+    app_timer_create(&m_app_main_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
 }
 
 /**@brief Function for the GAP initialization.
