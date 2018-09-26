@@ -15,7 +15,7 @@ typedef struct
     int16_t position;
     int16_t target;
     uint8_t movement;
-    uint8_t global_switch;
+    uint8_t is_resetting;
 } controller_state_t;
 
 typedef void (*controller_cb_t)(controller_state_t* block);
@@ -24,5 +24,6 @@ void controller_init(int position);
 void controller_register_cb(controller_cb_t cb);
 void controller_target_position_set(int16_t position);
 void controller_stop();
+void controller_reset(uint8_t is_resetting);
 
 #endif

@@ -117,10 +117,12 @@ void status_characteristic_update(ble_status_service_t* p_status_service, int16_
         uint16_t len = STATUS_CHAR_LENGTH;
         uint8_t value[STATUS_CHAR_LENGTH] = { 0 };
 
-        int32_t umPosition = (pos * TICK_TO_HEIGHT_MULTI) + BASE_HEIGHT;
-        int32_t umTarget = target > 0 ? (target * TICK_TO_HEIGHT_MULTI) + BASE_HEIGHT : 0;
+        int32_t umPosition = ((int32_t)pos * TICK_TO_HEIGHT_MULTI) + BASE_HEIGHT;
+        int32_t umTarget = target > 0 ? ((int32_t)target * TICK_TO_HEIGHT_MULTI) + BASE_HEIGHT : 0;
 
-        NRF_LOG_PRINTF("Stat: %d (@ %d)\r\n", umPosition, pos);
+        if (mov == 0xA1) {
+            NRF_LOG_PRINTF("Stat: %d (@ %d)\r\n", umPosition, pos);
+        }
 
         memcpy(value, (uint8_t*)&umPosition, sizeof(int32_t));
         memcpy(value + sizeof(int32_t), (uint8_t*)&umTarget, sizeof(int32_t));

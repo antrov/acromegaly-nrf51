@@ -561,8 +561,8 @@ void system_init()
 {
     int16_t tmp = 0;
     m45pe_read(FLASH_CTRL_POS_KEY, (uint8_t*)&tmp, sizeof(int16_t));
-    // controller_init(0);
     controller_init(tmp);
+    // controller_init(0);
 }
 
 void on_init_finished()
@@ -577,8 +577,8 @@ int main(void)
     uint32_t err_code;
     bool erase_bonds;
 
-    APP_ERROR_CHECK(NRF_LOG_INIT());
-    NRF_LOG_PRINTF("Acromegaly!\r\n");
+    APP_ERROR_CHECK(NRF_LOG_INIT());    
+    NRF_LOG_PRINTF("%sAcromegaly!%s\r\n", NRF_LOG_COLOR_RED, NRF_LOG_COLOR_DEFAULT);
 
     // Initialize.
     timers_init();

@@ -8,6 +8,7 @@
 
 #define CTRL_COMMAND_FORCE_STOP 0xAA
 #define CTRL_COMMAND_SET_TARGET_POS 0x60
+#define CTRL_COMMAND_RESET 0x88
 
 #define CTRL_CHAR_LENGTH 3
 
@@ -91,10 +92,10 @@ void control_service_init(ble_ctrl_service_t* p_ctrl_service)
 void ble_ctrl_service_on_cmd_set_target_pos(uint8_t* target)
 {
     int16_t targetMm = 0;
-    memcpy(&targetMm, target, sizeof(targetMm));
-
+    memcpy(&targetMm, target, sizeof(targetMm));    
     int32_t targetUm = targetMm * 1000;
     int16_t targetPos = (targetUm - BASE_HEIGHT) / TICK_TO_HEIGHT_MULTI;
+    NRF_LOG_PRINTF("Target %d]\r\n", targetMm);
     controller_target_position_set(targetPos);
 }
 
@@ -110,6 +111,8 @@ void ble_ctrl_service_on_write(ble_ctrl_service_t* p_ctrl_service, ble_evt_t* p_
         case CTRL_COMMAND_SET_TARGET_POS:
             ble_ctrl_service_on_cmd_set_target_pos(&(p_evt_write->data[1]));
             break;
+        case CTRL_COMMAND_RESET:
+            controller_reset(p_evt_write->data[1]);
         default:
             break;
         }
