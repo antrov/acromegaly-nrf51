@@ -32,10 +32,30 @@ Responsible for receiving control instructions, like target position, move direc
 
 ### Characteristic - 0x5010 - aka SOLO
 Position values should be send in little endian order (0xDD04 -> 1245 mm)
-```
-CTRL_COMMAND_FORCE_STOP 0xAA
-CTRL_COMMAND_SET_TARGET_POS 0x60
-```
+
+#### Stop - 0xAA
+Command for stop current movement
+|Bytes|Value|
+:-: |:-
+**0** | `uint8` 0xAA
+
+#### Go to target position - 0x60
+Command for stop current movement
+|Bytes|Value|
+:-: |:-
+**0** | `uint8` 0x60
+**1 - 2** | `uint16` targetPosition (mm)
+
+#### Go to extremum position - 0x88
+Initiates movement with target position out of possible bounds. When 
+|Bytes|Value|
+:-: |:-
+**0** | `uint8` 0x88
+**1** | `uint8` extremumType (Enum)
+
+where extremumType is:  
+>`0xDD` Bottom extremum  
+>`0xFF` Upper extremum
 
 ## Status Service - 0x5E1F - aka SELF
 ### Characteristic - 0xFEED - aka... FEED
@@ -47,8 +67,13 @@ Allows to read and to subscribe for current controller state. Value of this char
 
 #### Values
 Particular values are transmitted in little endian order.
-|Bits|Value|
+|Bytes|Value|
 :-: |:-
 **0 - 3** | `int32` currentPosition (µm)
 **4 - 7** | `int32` targetPosition (µm) 
 **8** | `uint8` movementState (Enum)
+
+where movementState enum is:  
+>`0xCB` None movement  
+>`0x92` Moves down  
+>`0xA1` Moves up

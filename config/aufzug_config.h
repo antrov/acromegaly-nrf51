@@ -14,4 +14,7 @@
  */
 #define BASE_HEIGHT 834000 
 
+#define TICKS_UPPER_LIMIT 109
+#define TICK_LOWER_LIMIT 0
+
 #endif

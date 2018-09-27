@@ -142,20 +142,12 @@ void set_target_pos(int16_t target)
     }
 }
 
-void set_reset(uint8_t reset)
+void sanitize_position()
 {
-    if (reset == m_state.is_resetting) {
-        return;
-    }
-
-    NRF_LOG_PRINTF("isResetting %d\r\n", reset);
-
-    m_state.is_resetting = reset;
-
-    if (reset) {
-        set_target_pos(-(int16_t)((uint16_t)~0 >> 1) - 1);
-    } else {
-        m_state.position = 0;
+    if (m_state.position > TICKS_UPPER_LIMIT) {
+        m_state.position = TICKS_UPPER_LIMIT;
+    } else if (m_state.position < TICK_LOWER_LIMIT) {
+        m_state.position = TICK_LOWER_LIMIT;
     }
 }
 
@@ -171,12 +163,12 @@ static void timer_timeout_handler(void* p_context)
     }
 
     if (m_previous_position != m_state.position) {
-        m_idle_counter = 0;
+        m_idle_counter = -1;
     } else if (m_idle_counter == CTR_TIMER_TICKS_STOP_THRESHOLD) {
         NRF_LOG_PRINTF("No mov. Stopping at pos %d\r\n", m_state.position);
-        set_reset(false);
         app_timer_stop(m_app_ctrl_timer_id);
         set_target_pos(NIL_POSITION);
+        sanitize_position();
 
         m_previous_position = -10;
         m_inert_movement = MOVE_DIRECTION_NONE;
@@ -222,7 +214,6 @@ void controller_init(int position)
     m_state.movement = MOVE_DIRECTION_NONE;
     m_state.position = position;
     m_state.target = NIL_POSITION;
-    m_state.is_resetting = false;
 
     ret_code_t err_code;
 
@@ -276,17 +267,21 @@ void controller_stop()
  * 
  * @param[in] with_moving   bool indicating which behaviour should be used to reset
  */
-void controller_reset(uint8_t with_moving)
+void controller_extremum_position_set(uint8_t extremum)
 {
-    //TODO: with_moving
-    if (m_state.movement == MOVE_DIRECTION_NONE && !m_state.is_resetting) {
-        set_reset(true);
+    switch (extremum) {
+    case CTRL_EXTREMUM_POS_BOTTOM:
+        set_target_pos(-(int16_t)((uint16_t)~0 >> 1) - 1);
+        break;
+    case CTRL_EXTREMUM_POS_TOP:
+        set_target_pos((int16_t)((uint16_t)~0 >> 1) - 1);
+        break;
+    default:
+        break;
     }
 }
 
 void controller_target_position_set(int16_t target)
 {
-    if (!m_state.is_resetting && target != m_state.position) {
-        set_target_pos(target);
-    }
+    set_target_pos(target);
 }
