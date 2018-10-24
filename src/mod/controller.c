@@ -167,8 +167,8 @@ static void timer_timeout_handler(void* p_context)
     } else if (m_idle_counter == CTR_TIMER_TICKS_STOP_THRESHOLD) {
         NRF_LOG_PRINTF("No mov. Stopping at pos %d\r\n", m_state.position);
         app_timer_stop(m_app_ctrl_timer_id);
-        set_target_pos(NIL_POSITION);
         sanitize_position();
+        set_target_pos(NIL_POSITION);        
 
         m_previous_position = -10;
         m_inert_movement = MOVE_DIRECTION_NONE;

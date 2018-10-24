@@ -74,6 +74,6 @@ Particular values are transmitted in little endian order.
 **8** | `uint8` movementState (Enum)
 
 where movementState enum is:  
->`0xCB` None movement  
+>`0xA1` None movement  
 >`0x92` Moves down  
->`0xA1` Moves up
+>`0xCB` Moves up
