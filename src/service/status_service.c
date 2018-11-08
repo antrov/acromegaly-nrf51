@@ -109,7 +109,7 @@ void ble_status_service_on_ble_evt(ble_status_service_t* p_status_service, ble_e
     }
 }
 
-void status_characteristic_update(ble_status_service_t* p_status_service, int16_t pos, int16_t target, uint8_t mov)
+void status_characteristic_update(ble_status_service_t* p_status_service, int16_t pos, int16_t target, uint8_t target_type, uint8_t mov)
 {
     if (p_status_service->conn_handle != BLE_CONN_HANDLE_INVALID) {
         ble_gatts_hvx_params_t hvx_params;
@@ -120,14 +120,18 @@ void status_characteristic_update(ble_status_service_t* p_status_service, int16_
         int32_t umPosition = ((int32_t)pos * TICK_TO_HEIGHT_MULTI) + BASE_HEIGHT;
         int32_t umTarget = target > 0 ? ((int32_t)target * TICK_TO_HEIGHT_MULTI) + BASE_HEIGHT : 0;
 
-        if (mov == 0xA1) {
-            NRF_LOG_PRINTF("Stat: %d (@ %d)\r\n", umPosition, pos);
-        }
+        int16_t mmPosition = umPosition / 1000;
+        int16_t mmTarget = umTarget / 1000;
 
-        memcpy(value, (uint8_t*)&umPosition, sizeof(int32_t));
-        memcpy(value + sizeof(int32_t), (uint8_t*)&umTarget, sizeof(int32_t));
+        // if (mov == 0xA1) {
+            // NRF_LOG_PRINTF("Stat: %d (@ %d), type: %x\r\n", umPosition, pos, target_type);
+        // }
 
-        value[8] = mov;
+        memcpy(value, (uint8_t*)&mmPosition, sizeof(int16_t));
+        memcpy(value + sizeof(int16_t), (uint8_t*)&mmTarget, sizeof(int16_t));
+
+        value[4] = target_type;
+        value[5] = mov;
 
         hvx_params.handle = p_status_service->char_handles.value_handle;
         hvx_params.type = BLE_GATT_HVX_NOTIFICATION;

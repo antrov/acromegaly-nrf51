@@ -17,6 +17,11 @@
 /* Controller local definitions.                                             */
 /*===========================================================================*/
 
+#define CTRL_TARGET_TYPE_NONE 1<<0
+#define CTRL_TARGET_TYPE_EXACT 1<<1
+#define CTRL_TARGET_TYPE_EXTREMUM_MIN 1<<2
+#define CTRL_TARGET_TYPE_EXTREMUM_MAX 1<<3
+
 #define GPIO_MOTOR_ENABLED_PIN 28
 #define GPIO_MOTOR_UP_PIN 16
 #define GPIO_MOTOR_DOWN_PIN 15
@@ -31,7 +36,7 @@
     m_cb(&m_state)
 
 #define APP_CTRL_TIMER_INTERVAL_MS 150
-#define APP_CTRL_TIMER_OP_QUEUE_SIZE 1 /**< Size of timer operation queues. */
+#define APP_CTRL_TIMER_OP_QUEUE_SIZE 4 /**< Size of timer operation queues. */
 #define APP_CTRL_TIMER_PRESCALER 0 /**< Value of the RTC1 PRESCALER register. */
 #define APP_CTRL_TIMER_INTERVAL APP_TIMER_TICKS(APP_CTRL_TIMER_INTERVAL_MS, APP_CTRL_TIMER_PRESCALER) // 1000 ms intervals
 
@@ -53,7 +58,7 @@ static controller_state_t m_state; /* COntroller state callback method. Optional
 uint32_t m_previous_inpin_state = 0;
 int16_t m_previous_position = 0; /* Used to detect a premature end of movement */
 uint8_t m_inert_movement = MOVE_DIRECTION_NONE;
-uint32_t m_idle_counter = 0;
+uint8_t m_idle_counter = 0;
 
 /*===========================================================================*/
 /* Controller local functions.                                               */
@@ -88,6 +93,7 @@ void set_movement_dir(uint8_t direction)
 
     if (motor != 0x00) {
         m_inert_movement = direction;
+        m_idle_counter = 0;
 
         nrf_drv_gpiote_out_set(motor);
         nrf_drv_gpiote_out_set(GPIO_MOTOR_ENABLED_PIN);
@@ -127,13 +133,14 @@ void update_position()
     }
 }
 
-void set_target_pos(int16_t target)
+void set_target_pos(int16_t target, uint8_t target_type)
 {
-    NRF_LOG_PRINTF("%sSet target to %d%s\r\n", NRF_LOG_COLOR_GREEN, target, NRF_LOG_COLOR_DEFAULT);
+    NRF_LOG_PRINTF("%sSet target to %d (t: %x)%s\r\n", NRF_LOG_COLOR_GREEN, target, target_type, NRF_LOG_COLOR_DEFAULT);
 
     m_state.target = target;
+    m_state.target_type = target_type;
 
-    if (target == NIL_POSITION) {
+    if (target == NIL_POSITION || target == m_state.position) {
         set_movement_dir(MOVE_DIRECTION_NONE);
     } else if (target < m_state.position) {
         set_movement_dir(MOVE_DIRECTION_DOWN);
@@ -144,11 +151,12 @@ void set_target_pos(int16_t target)
 
 void sanitize_position()
 {
-    if (m_state.position > TICKS_UPPER_LIMIT) {
+    if (m_state.position > TICKS_UPPER_LIMIT || m_state.target_type == CTRL_TARGET_TYPE_EXTREMUM_MAX) {
         m_state.position = TICKS_UPPER_LIMIT;
-    } else if (m_state.position < TICK_LOWER_LIMIT) {
+    } else if (m_state.position < TICK_LOWER_LIMIT || m_state.target_type == CTRL_TARGET_TYPE_EXTREMUM_MIN) {
         m_state.position = TICK_LOWER_LIMIT;
     }
+    NRF_LOG_PRINTF("Sanitized pos %d\r\n", m_state.position);
 }
 
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {}
@@ -163,12 +171,12 @@ static void timer_timeout_handler(void* p_context)
     }
 
     if (m_previous_position != m_state.position) {
-        m_idle_counter = -1;
-    } else if (m_idle_counter == CTR_TIMER_TICKS_STOP_THRESHOLD) {
-        NRF_LOG_PRINTF("No mov. Stopping at pos %d\r\n", m_state.position);
+        m_idle_counter = 0;
+    } else if (m_idle_counter >= CTR_TIMER_TICKS_STOP_THRESHOLD) {
+        NRF_LOG_PRINTF("No mov. Stopping at pos %d, idle counter %d\r\n", m_state.position, m_idle_counter);
         app_timer_stop(m_app_ctrl_timer_id);
         sanitize_position();
-        set_target_pos(NIL_POSITION);        
+        set_target_pos(NIL_POSITION, CTRL_TARGET_TYPE_NONE);        
 
         m_previous_position = -10;
         m_inert_movement = MOVE_DIRECTION_NONE;
@@ -257,7 +265,7 @@ void controller_register_cb(controller_cb_t cb)
 
 void controller_stop()
 {
-    set_target_pos(NIL_POSITION);
+    set_target_pos(NIL_POSITION, CTRL_TARGET_TYPE_NONE);
 }
 
 /**
@@ -271,10 +279,10 @@ void controller_extremum_position_set(uint8_t extremum)
 {
     switch (extremum) {
     case CTRL_EXTREMUM_POS_BOTTOM:
-        set_target_pos(-(int16_t)((uint16_t)~0 >> 1) - 1);
+        set_target_pos(-(int16_t)((uint16_t)~0 >> 1) - 1, CTRL_TARGET_TYPE_EXTREMUM_MIN);
         break;
     case CTRL_EXTREMUM_POS_TOP:
-        set_target_pos((int16_t)((uint16_t)~0 >> 1) - 1);
+        set_target_pos((int16_t)((uint16_t)~0 >> 1) - 1, CTRL_TARGET_TYPE_EXTREMUM_MAX);
         break;
     default:
         break;
@@ -283,5 +291,5 @@ void controller_extremum_position_set(uint8_t extremum)
 
 void controller_target_position_set(int16_t target)
 {
-    set_target_pos(target);
+    set_target_pos(target, CTRL_TARGET_TYPE_EXACT);
 }

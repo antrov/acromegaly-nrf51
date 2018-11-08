@@ -119,14 +119,11 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t* p_file_name)
 
 static void update_status_service()
 {
-    status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.movement);
+    status_characteristic_update(&m_status_service, ctrl_state.position, ctrl_state.target, ctrl_state.target_type, ctrl_state.movement);
 }
 
 static void timer_timeout_handler(void* p_context)
 {
-    int32_t temperature = 0;
-    sd_temp_get(&temperature);
-    //our_termperature_characteristic_update(&m_our_service, &temperature);
     nrf_gpio_pin_toggle(LED_2);
 }
 
@@ -596,7 +593,7 @@ int main(void)
 
     // Start execution.
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
-    APP_ERROR_CHECK(err_code);    
+    APP_ERROR_CHECK(err_code);   
 
     for (;;) {
         if (ctrl_state_changed == 0x01) {    

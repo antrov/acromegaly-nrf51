@@ -36,6 +36,6 @@ void ble_status_service_on_ble_evt(ble_status_service_t* p_status_service, ble_e
  */
 void status_service_init(ble_status_service_t* p_status_service);
 
-void status_characteristic_update(ble_status_service_t* p_status_service, int16_t pos, int16_t target, uint8_t mov);
+void status_characteristic_update(ble_status_service_t* p_status_service, int16_t pos, int16_t target, uint8_t target_type, uint8_t mov);
 
 #endif /* _ OUR_SERVICE_H__ */

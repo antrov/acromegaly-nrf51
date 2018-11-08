@@ -16,6 +16,7 @@ typedef struct
     int16_t position;
     int16_t target;
     uint8_t movement;
+    uint8_t target_type;
 } controller_state_t;
 
 typedef void (*controller_cb_t)(controller_state_t* block);
