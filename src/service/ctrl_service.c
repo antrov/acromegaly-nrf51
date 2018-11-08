@@ -95,7 +95,7 @@ void ble_ctrl_service_on_cmd_set_target_pos(uint8_t* target)
     memcpy(&targetMm, target, sizeof(targetMm));    
 
     int32_t targetUm = targetMm * 1000;
-    int16_t targetPos = (targetUm - BASE_HEIGHT) / TICK_TO_HEIGHT_MULTI;
+    int16_t targetPos = ROUNDED_DIV(targetUm - BASE_HEIGHT, TICK_TO_HEIGHT_MULTI);
 
     controller_target_position_set(targetPos);
 }
