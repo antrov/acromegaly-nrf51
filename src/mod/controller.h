@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include <string.h>
 
+#define CTRL_TARGET_TYPE_NONE 1<<0
+#define CTRL_TARGET_TYPE_EXACT 1<<1
+#define CTRL_TARGET_TYPE_EXTREMUM_MIN 1<<2
+#define CTRL_TARGET_TYPE_EXTREMUM_MAX 1<<3
+
 #define MOVE_DIRECTION_UP 0xCB
 #define MOVE_DIRECTION_DOWN 0x92
 #define MOVE_DIRECTION_NONE 0xA1

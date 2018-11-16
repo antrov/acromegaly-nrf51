@@ -17,11 +17,6 @@
 /* Controller local definitions.                                             */
 /*===========================================================================*/
 
-#define CTRL_TARGET_TYPE_NONE 1<<0
-#define CTRL_TARGET_TYPE_EXACT 1<<1
-#define CTRL_TARGET_TYPE_EXTREMUM_MIN 1<<2
-#define CTRL_TARGET_TYPE_EXTREMUM_MAX 1<<3
-
 #define GPIO_MOTOR_ENABLED_PIN 28
 #define GPIO_MOTOR_UP_PIN 16
 #define GPIO_MOTOR_DOWN_PIN 15
@@ -222,6 +217,7 @@ void controller_init(int position)
     m_state.movement = MOVE_DIRECTION_NONE;
     m_state.position = position;
     m_state.target = NIL_POSITION;
+    m_state.target_type = CTRL_TARGET_TYPE_NONE;
 
     ret_code_t err_code;
 
