@@ -68,19 +68,22 @@ Position values should be send in little endian order (0xDD04 -> 1245 mm)
 
 #### Stop - 0xAA
 Command for stop current movement
+
 |Bytes|Value|
 :-: |:-
 **0** | `uint8` 0xAA
 
 #### Go to target position - 0x60
 Command for stop current movement
+
 |Bytes|Value|
 :-: |:-
 **0** | `uint8` 0x60
 **1 - 2** | `uint16` targetPosition (mm)
 
 #### Go to extremum position - 0x88
-Initiates movement with target position out of possible bounds. When 
+Initiates movement with target position out of possible bounds. When movement is finished, value of extremum is as as current. This method is designed to reset position counter and minimize position detion error. 
+
 |Bytes|Value|
 :-: |:-
 **0** | `uint8` 0x88
@@ -100,6 +103,7 @@ Allows to read and to subscribe for current controller state. Value of this char
 
 #### Values
 Particular values are transmitted in little endian order.
+
 |Bytes|Value|
 :-: |:-
 **0 - 3** | `int32` currentPosition (µm)
