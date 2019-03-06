@@ -41,7 +41,7 @@ Remind, if the Makefile has set `ASMFLAGS += -DNRF_LOG_USES_RTT=1`, then Segger 
 
 ## Configuration
 
-Depending of the actual desk construction, some geometrical values may be adjusted. Defines of this values are localized in the `config/acromegaly_config.h` header:
+Depending of the actual desk construction, some geometrical values may be adjusted. Definitions of this values are localized in the `config/acromegaly_config.h` header:
 
 ```c
 /** Value used to convert ticks count to more recognizable unit, broadcasted by status service.
