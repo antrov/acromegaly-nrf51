@@ -1,7 +1,7 @@
 #include "app_error.h"
 #include "app_pwm.h"
 #include "tick_generator.h"
-#include "aufzug_config.h"
+#include "acromegaly_config.h"
 
 #if USE_TICK_GENERATOR
 APP_PWM_INSTANCE(PWM1,1); 

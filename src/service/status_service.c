@@ -1,6 +1,6 @@
 #include "status_service.h"
 #include "app_error.h"
-#include "aufzug_config.h"
+#include "acromegaly_config.h"
 #include "ble_srv_common.h"
 #include "nrf_gpio.h"
 #include "nrf_log.h"

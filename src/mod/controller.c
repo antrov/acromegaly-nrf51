@@ -2,7 +2,7 @@
 #include "app_error.h"
 #include "app_pwm.h"
 #include "app_timer.h"
-#include "aufzug_config.h"
+#include "acromegaly_config.h"
 #include "boards.h"
 #include "nrf.h"
 #include "nrf_drv_gpiote.h"
@@ -30,7 +30,7 @@
     if (m_cb)                \
     m_cb(&m_state)
 
-#define APP_CTRL_TIMER_INTERVAL_MS 150
+#define APP_CTRL_TIMER_INTERVAL_MS 50
 #define APP_CTRL_TIMER_OP_QUEUE_SIZE 4 /**< Size of timer operation queues. */
 #define APP_CTRL_TIMER_PRESCALER 0 /**< Value of the RTC1 PRESCALER register. */
 #define APP_CTRL_TIMER_INTERVAL APP_TIMER_TICKS(APP_CTRL_TIMER_INTERVAL_MS, APP_CTRL_TIMER_PRESCALER) // 1000 ms intervals
@@ -229,6 +229,8 @@ void controller_init(int position)
 
     err_code = nrf_drv_gpiote_in_init(GPIO_TICK_INPUT, &tick_in_config, in_pin_handler);
     APP_ERROR_CHECK(err_code);
+
+    m_previous_inpin_state = nrf_gpio_pin_read(GPIO_TICK_INPUT);
 
     /* Output Pins config */
     nrf_drv_gpiote_out_config_t out_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
