@@ -39,6 +39,28 @@ In the opposite case, validate connection between nRF51 and Flash memory/UART/Se
 
 Remind, if the Makefile has set `ASMFLAGS += -DNRF_LOG_USES_RTT=1`, then Segger SWDIO/SWCLK have to be connected. Otherwise the MCU would not boot.
 
+## Configuration
+
+Depending of the actual desk construction, some geometrical values may be adjusted. Defines of this values are localized in the `config/acromegaly_config.h` header:
+
+```c
+/** Value used to convert ticks count to more recognizable unit, broadcasted by status service.
+ * In this case, it's fraction 1*10e-6, where one unit of multiplied ticks equals 1um.
+ */
+#define TICK_TO_HEIGHT_MULTI 525
+
+/**
+ * Value in nanometers of minimal countertop position over ground
+ */
+#define BASE_HEIGHT 834000 
+
+/**
+ * The total number of ticks required to achieve a desk maximum height
+ */
+#define TICKS_UPPER_LIMIT 816
+#define TICK_LOWER_LIMIT 0
+```
+
 # Logging
 Logging is supplied by utils library provided by Nordic SDK (utils/nrf_log). Project can be configured to use either UART and/or SeggerRTT. To make selection, set the proper flag in a Makefile. 
 
