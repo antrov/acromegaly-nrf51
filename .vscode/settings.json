@@ -1,0 +1,13 @@
+{
+    "NRF_SDK": "/Users/antrov/Projekty/acro/nRF5_SDK_11.0.0_89a8197",
+    "files.associations": {
+        "ble_advdata.h": "c",
+        "acromegaly_config.h": "c",
+        "controller.h": "c",
+        "device_manager.h": "c",
+        "nrf_drv_timer.h": "c",
+        "sensorsim.h": "c"
+    },
+    "C_Cpp.clang_format_fallbackStyle": "WebKit",
+    "C_Cpp.errorSquiggles": "Disabled"
+}
