@@ -1,10 +1,43 @@
-**Acromegaly nRF51**
-===
+# Acromegaly nRF51
 
-Simple system for remote control of desk height (UART+BLE)
+Acromegaly nRF51 is an embedded controller for the adjustable height desk. Access to controller is available through BLE interface by the [iOS client app](https://github.com/antrov/acromegaly-ios)
 
-# Setup
-TODO
+This resposity is a part of the [Acromegaly project](https://github.com/antrov/acromegaly) - Open Source desk with adjustable height.
+
+# Build
+
+Code and structure of this repository bases on a BLE advertising template provided by Nordic. In sake of simplicity, folders for Keil uVision project and for other MCUs was removed.
+
+## Prerequisites
+
+* GNU Make 3.8+
+* nRF5 SDK 11.0.0 (89a8197)
+* nrfjprog 9.7.0+
+* nRF51822 or nRF51422 MCU (ie. [nRF51 DK Board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF51-DK))
+* correct MCU [wiring](https://github.com/antrov/acromegaly)
+
+## Makefile
+
+Setup absolute path to nRF5 SDK 11 in `pca10028/s130/armgcc/Makefile`:
+
+```Makefile
+SDK_ROOT := /Users/johndoe/nRF5_SDK_11.0.0_89a8197
+```
+
+That its, project is ready to build and flash along with Softdevice:
+
+```bash
+cd pca10028/s130/armgcc/
+make build
+make flash_softdevice
+make flash
+```
+
+Depending of applied connections to MCU and logger configuration, the new BLE advertiser should appear. 
+
+In the opposite case, validate connection between nRF51 and Flash memory/UART/Segger according to the [Eagle files](https://github.com/antrov/acromegaly). 
+
+Remind, if the Makefile has set `ASMFLAGS += -DNRF_LOG_USES_RTT=1`, then Segger SWDIO/SWCLK have to be connected. Otherwise the MCU would not boot.
 
 # Logging
 Logging is supplied by utils library provided by Nordic SDK (utils/nrf_log). Project can be configured to use either UART and/or SeggerRTT. To make selection, set the proper flag in a Makefile. 
@@ -77,3 +110,34 @@ where movementState enum is:
 >`0xA1` None movement  
 >`0x92` Moves down  
 >`0xCB` Moves up
+
+## Contact
+In case of new issues, concepts or just a will to say hello:
+
+* antrof@gmail.com
+* https://www.linkedin.com/in/handr/
+
+## License 
+
+Copyright 2019 Hubert Andrzejewski
+
+Based on Nordic project and provided by this company license.
+
+```
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE HEREBY
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, 
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; DAMAGE TO ANY DEVICE, LOSS OF USE, DATA, OR 
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+OF THE POSSIBILITY OF SUCH DAMAGE. SOME STATES DO NOT ALLOW 
+THE EXCLUSION OF INCIDENTAL OR CONSEQUENTIAL DAMAGES, SO THE
+ABOVE LIMITATIONS MAY NOT APPLY TO YOU.
+```
